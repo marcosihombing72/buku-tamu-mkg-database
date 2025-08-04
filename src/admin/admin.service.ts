@@ -9,12 +9,12 @@ import {
 import * as dayjs from 'dayjs';
 import * as ExcelJS from 'exceljs';
 import { PassThrough } from 'stream';
-import { LoginAdminDto } from './admin/dto/login-admin.dto';
-import { LogoutAdminDto } from './admin/dto/logout-admin.dto';
-import { PeranAdmin, RegisterAdminDto } from './admin/dto/register-admin.dto';
-import { ResetPasswordDto } from './admin/dto/reset-password-admin.dto';
-import { UpdateAdminProfileDto } from './admin/dto/update-admin.dto';
-import { supabase } from './supabase/supabase.client';
+import { supabase } from '../supabase/supabase.client';
+import { LoginAdminDto } from './dto/login-admin.dto';
+import { LogoutAdminDto } from './dto/logout-admin.dto';
+import { PeranAdmin, RegisterAdminDto } from './dto/register-admin.dto';
+import { ResetPasswordDto } from './dto/reset-password-admin.dto';
+import { UpdateAdminProfileDto } from './dto/update-admin.dto';
 const PDFDocument = require('pdfkit');
 
 @Injectable()

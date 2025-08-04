@@ -1,6 +1,3 @@
-import { IsiBukuTamuDto } from '@/pengunjung/dto/isi-buku-tamu.dto';
-import { SearchPengunjungDto } from '@/pengunjung/dto/search-pengunjung.dto';
-import { PengunjungService } from '@/pengunjung/pengunjung.service';
 import {
   BadRequestException,
   Body,
@@ -15,6 +12,9 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBody, ApiConsumes, ApiQuery } from '@nestjs/swagger';
 import { Request } from 'express';
+import { IsiBukuTamuDto } from './dto/isi-buku-tamu.dto';
+import { SearchPengunjungDto } from './dto/search-pengunjung.dto';
+import { PengunjungService } from './pengunjung.service';
 
 @Controller('pengunjung')
 export class PengunjungController {

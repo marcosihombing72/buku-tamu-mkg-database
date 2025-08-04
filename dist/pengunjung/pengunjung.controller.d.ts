@@ -1,28 +1,32 @@
-import { IsiBukuTamuDto } from '@/pengunjung/dto/isi-buku-tamu.dto';
-import { SearchPengunjungDto } from '@/pengunjung/dto/search-pengunjung.dto';
-import { PengunjungService } from '@/pengunjung/pengunjung.service';
 import { Request } from 'express';
+import { IsiBukuTamuDto } from './dto/isi-buku-tamu.dto';
+import { SearchPengunjungDto } from './dto/search-pengunjung.dto';
+import { PengunjungService } from './pengunjung.service';
 export declare class PengunjungController {
-    private readonly pengunjungService;
-    constructor(pengunjungService: PengunjungService);
-    getAll(): {
-        value: string;
-        label: string;
+  private readonly pengunjungService;
+  constructor(pengunjungService: PengunjungService);
+  getAll(): {
+    value: string;
+    label: string;
+  }[];
+  getAllStasiun(): Promise<{
+    message: string;
+    data: {
+      ID_Stasiun: any;
+      Nama_Stasiun: any;
     }[];
-    getAllStasiun(): Promise<{
-        message: string;
-        data: {
-            ID_Stasiun: any;
-            Nama_Stasiun: any;
-        }[];
-    }>;
-    getJumlahPengunjung(): Promise<{
-        hariIni: number;
-        mingguIni: number;
-        bulanIni: number;
-    }>;
-    searchPengunjung(dto: SearchPengunjungDto): Promise<any[]>;
-    isiBukuTamu(dto: IsiBukuTamuDto, req: Request, file?: Express.Multer.File): Promise<{
-        message: string;
-    }>;
+  }>;
+  getJumlahPengunjung(): Promise<{
+    hariIni: number;
+    mingguIni: number;
+    bulanIni: number;
+  }>;
+  searchPengunjung(dto: SearchPengunjungDto): Promise<any[]>;
+  isiBukuTamu(
+    dto: IsiBukuTamuDto,
+    req: Request,
+    file?: Express.Multer.File,
+  ): Promise<{
+    message: string;
+  }>;
 }

@@ -1,10 +1,10 @@
-import { supabase } from '@/supabase/supabase.client';
 import {
   CanActivate,
   ExecutionContext,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { supabase } from '../supabase/supabase.client';
 
 @Injectable()
 export class AuthGuard implements CanActivate {

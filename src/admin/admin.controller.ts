@@ -1,10 +1,3 @@
-import { AdminService } from '@/admin/admin.service';
-import { ExportBukuTamuDto } from '@/admin/dto/export-buku-tamu.dto';
-import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
-import { LogoutAdminDto } from '@/admin/dto/logout-admin.dto';
-import { RegisterAdminDto } from '@/admin/dto/register-admin.dto';
-import { ResetPasswordDto } from '@/admin/dto/reset-password-admin.dto';
-import { UpdateAdminProfileDto } from '@/admin/dto/update-admin.dto';
 import {
   BadRequestException,
   Body,
@@ -32,6 +25,13 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { Response as ExpressResponse, Request } from 'express';
+import { AdminService } from './admin.service';
+import { ExportBukuTamuDto } from './dto/export-buku-tamu.dto';
+import { LoginAdminDto } from './dto/login-admin.dto';
+import { LogoutAdminDto } from './dto/logout-admin.dto';
+import { RegisterAdminDto } from './dto/register-admin.dto';
+import { ResetPasswordDto } from './dto/reset-password-admin.dto';
+import { UpdateAdminProfileDto } from './dto/update-admin.dto';
 
 @Controller('admin')
 export class AdminController {

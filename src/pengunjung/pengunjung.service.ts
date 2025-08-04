@@ -1,10 +1,10 @@
-import { IsiBukuTamuDto } from '@/pengunjung/dto/isi-buku-tamu.dto';
-import { SearchPengunjungDto } from '@/pengunjung/dto/search-pengunjung.dto';
 import axios from 'axios';
+import { IsiBukuTamuDto } from './dto/isi-buku-tamu.dto';
+import { SearchPengunjungDto } from './dto/search-pengunjung.dto';
 
 const API_BASE_URL = 'https://emsifa.github.io/api-wilayah-indonesia/api';
 
-import { supabase } from '@/supabase/supabase.client';
+import { supabase } from '../supabase/supabase.client';
 
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { extname } from 'path';

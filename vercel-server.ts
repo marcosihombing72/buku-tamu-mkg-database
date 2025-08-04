@@ -1,22 +1,12 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './src/app.module';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import * as express from 'express';
+import { AppModule } from './src/app.module';
 
-const expressApp = express();
-let nestApp = null;
+const server = express();
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
+export const handler = async (req, res) => {
+  const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
   await app.init();
-  nestApp = expressApp;
-}
-
-bootstrap();
-
-export const handler = (req, res) => {
-  if (!nestApp) {
-    return res.status(503).send('App not ready');
-  }
-  return nestApp(req, res);
+  server(req, res);
 };

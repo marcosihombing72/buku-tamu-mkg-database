@@ -2,12 +2,14 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { Server } from 'http';
+import { ExpressAdapter } from '@nestjs/platform-express';
+import express, { Request, Response } from 'express';
 
-let server: Server;
+const expressApp = express();
+let isBootstrapped = false;
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
 
   app.enableCors({
     origin: true,
@@ -42,15 +44,14 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  await app.init(); // tanpa listen()
-  return app.getHttpAdapter().getInstance();
+  await app.init();
+  isBootstrapped = true;
 }
 
-// Handler untuk Vercel
-export default async function handler(req, res) {
-  if (!server) {
-    const instance = await bootstrap();
-    server = instance;
+// ✅ Handler untuk Vercel
+export default async function handler(req: Request, res: Response) {
+  if (!isBootstrapped) {
+    await bootstrap();
   }
-  return server(req, res);
+  return expressApp(req, res);
 }

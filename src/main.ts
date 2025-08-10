@@ -2,6 +2,9 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { Server } from 'http';
+
+let server: Server;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -39,6 +42,15 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(process.env.PORT || 3000);
+  await app.init(); // tanpa listen()
+  return app.getHttpAdapter().getInstance();
 }
-bootstrap();
+
+// Handler untuk Vercel
+export default async function handler(req, res) {
+  if (!server) {
+    const instance = await bootstrap();
+    server = instance;
+  }
+  return server(req, res);
+}

@@ -6,11 +6,12 @@ import {
   Post,
   Put,
   Query,
+  UnauthorizedException,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiConsumes, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { AdminService } from '@/admin/admin.service';
 import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
@@ -33,10 +34,16 @@ export class AdminController {
   }
 
   @Get('profile')
+  @ApiBearerAuth()
   async getProfile(
-    @Headers('access_token') access_token: string,
+    @Headers('authorization') auth: string,
     @Headers('user_id') user_id: string,
   ) {
+    if (!auth?.startsWith('Bearer ')) {
+      throw new UnauthorizedException('Authorization header tidak valid');
+    }
+
+    const access_token = auth.replace('Bearer ', '');
     return this.adminService.getProfile(user_id, access_token);
   }
 

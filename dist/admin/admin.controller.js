@@ -31,7 +31,11 @@ let AdminController = class AdminController {
     async resetPasswordAdmin(dto) {
         return this.adminService.resetPasswordAdmin(dto);
     }
-    async getProfile(access_token, user_id) {
+    async getProfile(auth, user_id) {
+        if (!auth?.startsWith('Bearer ')) {
+            throw new common_1.UnauthorizedException('Authorization header tidak valid');
+        }
+        const access_token = auth.replace('Bearer ', '');
         return this.adminService.getProfile(user_id, access_token);
     }
     async updateProfile(access_token, user_id, dto, foto) {
@@ -70,7 +74,8 @@ __decorate([
 ], AdminController.prototype, "resetPasswordAdmin", null);
 __decorate([
     (0, common_1.Get)('profile'),
-    __param(0, (0, common_1.Headers)('access_token')),
+    (0, swagger_1.ApiBearerAuth)(),
+    __param(0, (0, common_1.Headers)('authorization')),
     __param(1, (0, common_1.Headers)('user_id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),

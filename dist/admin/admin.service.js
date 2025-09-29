@@ -53,7 +53,7 @@ let AdminService = class AdminService {
         }
         const { data: adminData, error: adminError } = await supabase
             .from('Admin')
-            .select('*')
+            .select('ID_Admin, Peran, Nama_Depan_Admin, Nama_Belakang_Admin, Email_Admin')
             .eq('Email_Admin', dto.email)
             .single();
         if (adminError || !adminData) {
@@ -64,7 +64,9 @@ let AdminService = class AdminService {
             access_token: session.access_token,
             refresh_token: session.refresh_token,
             user_id: user.id,
-            role: adminData.Peran,
+            peran: adminData.Peran,
+            nama_depan: adminData.Nama_Depan_Admin,
+            nama_belakang: adminData.Nama_Belakang_Admin,
             expires_at: session.expires_at,
         };
     }
@@ -286,7 +288,23 @@ let AdminService = class AdminService {
         }
         let bukuTamuQuery = supabase
             .from('Buku_Tamu')
-            .select('*, Stasiun:ID_Stasiun(Nama_Stasiun)');
+            .select(`
+      ID_Buku_Tamu,
+      ID_Pengunjung,
+      ID_Stasiun,
+      Tujuan,
+      Tanggal_Pengisian,
+      Waktu_Kunjungan,
+      Tanda_Tangan,
+      Nama_Depan_Pengunjung,
+      Nama_Belakang_Pengunjung,
+      Email_Pengunjung,
+      No_Telepon_Pengunjung,
+      Asal_Pengunjung,
+      Asal_Instansi,
+      Stasiun:ID_Stasiun(Nama_Stasiun)
+    `)
+            .order('Waktu_Pengisian', { ascending: false });
         if (!isSuperadmin) {
             if (!adminData.ID_Stasiun) {
                 throw new common_1.BadRequestException('Admin tidak memiliki ID_Stasiun');

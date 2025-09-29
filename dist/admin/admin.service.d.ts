@@ -11,7 +11,9 @@ export declare class AdminService {
         access_token: string;
         refresh_token: string;
         user_id: string;
-        role: any;
+        peran: any;
+        nama_depan: any;
+        nama_belakang: any;
         expires_at: number | undefined;
     }>;
     resetPasswordAdmin(dto: ResetPasswordAdminDto): Promise<{
@@ -58,7 +60,24 @@ export declare class AdminService {
         };
         isSuperadmin: boolean;
         count: number;
-        data: any[];
+        data: {
+            Waktu_Kunjungan: string;
+            ID_Buku_Tamu: any;
+            ID_Pengunjung: any;
+            ID_Stasiun: any;
+            Tujuan: any;
+            Tanggal_Pengisian: any;
+            Tanda_Tangan: any;
+            Nama_Depan_Pengunjung: any;
+            Nama_Belakang_Pengunjung: any;
+            Email_Pengunjung: any;
+            No_Telepon_Pengunjung: any;
+            Asal_Pengunjung: any;
+            Asal_Instansi: any;
+            Stasiun: {
+                Nama_Stasiun: any;
+            }[];
+        }[];
     }>;
     private getBukuTamuByPeriod;
     getBukuTamuHariIni(access_token: string, user_id: string): Promise<{

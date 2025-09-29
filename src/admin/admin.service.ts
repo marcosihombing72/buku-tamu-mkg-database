@@ -149,10 +149,21 @@ export class AdminService {
       );
     }
 
-    //*** Langkah 4: Kembalikan response ***
+    //*** Langkah 4: Transformasi data admin ***
+    const transformedData = {
+      user_id: adminData.ID_Admin,
+      email: adminData.Email_Admin,
+      nama_depan: adminData.Nama_Depan_Admin,
+      nama_belakang: adminData.Nama_Belakang_Admin,
+      peran: adminData.Peran,
+      foto: adminData.Foto_Admin,
+      stasiun_id: adminData.ID_Stasiun,
+    };
+
+    //*** Langkah 5: Kembalikan response ***
     return {
       message: 'Profil admin berhasil diambil',
-      data: adminData,
+      data: transformedData,
     };
   }
 
@@ -261,7 +272,20 @@ export class AdminService {
       updatedFields.push('foto');
     }
 
-    //*** Langkah 5: Update tabel Admin ***
+    //*** Langkah 5: Ambil data lama Admin ***
+    const { data: existingAdmin, error: existingError } = await supabase
+      .from('Admin')
+      .select('*')
+      .eq('ID_Admin', user_id)
+      .single();
+
+    if (existingError || !existingAdmin) {
+      throw new BadRequestException(
+        `Gagal ambil data admin: ${existingError?.message}`,
+      );
+    }
+
+    //*** Langkah 6: Update tabel Admin ***
     const updatePayload: any = {};
     if (nama_depan) {
       updatePayload.Nama_Depan_Admin = nama_depan;
@@ -275,23 +299,41 @@ export class AdminService {
       updatePayload.Foto_Admin = fotoUrl;
     }
 
+    let updatedAdmin: any = null;
     if (Object.keys(updatePayload).length > 0) {
-      const { error: updateError } = await supabase
+      const { data, error: updateError } = await supabase
         .from('Admin')
         .update(updatePayload)
-        .eq('ID_Admin', user_id);
+        .eq('ID_Admin', user_id)
+        .select()
+        .single();
 
       if (updateError) {
         throw new BadRequestException(
           `Gagal update data admin: ${updateError.message}`,
         );
       }
+      updatedAdmin = data;
     }
 
-    //*** Langkah 6: Kembalikan response ***
+    //*** Langkah 7: Transformasi data untuk response ***
+    const transformedData = {
+      user_id: user_id,
+      email: existingAdmin.Email_Admin,
+      nama_depan:
+        updatedAdmin?.Nama_Depan_Admin || existingAdmin.Nama_Depan_Admin,
+      nama_belakang:
+        updatedAdmin?.Nama_Belakang_Admin || existingAdmin.Nama_Belakang_Admin,
+      peran: existingAdmin.Peran,
+      foto: updatedAdmin?.Foto_Admin || existingAdmin.Foto_Admin,
+      stasiun_id: existingAdmin.ID_Stasiun,
+    };
+
+    //*** Langkah 8: Kembalikan response ***
     return {
       message: 'Profil admin berhasil diperbarui',
       updatedFields,
+      data: transformedData,
     };
   }
 
@@ -407,16 +449,6 @@ export class AdminService {
       bukuTamuQuery = bukuTamuQuery.eq('ID_Stasiun', filterStasiunId);
     }
 
-    // Jika admin biasa hanya data sesuai ID_Stasiun
-    if (!isSuperadmin) {
-      if (!adminData.ID_Stasiun) {
-        throw new BadRequestException('Admin tidak memiliki ID_Stasiun');
-      }
-      bukuTamuQuery = bukuTamuQuery.eq('ID_Stasiun', adminData.ID_Stasiun);
-    } else if (filterStasiunId) {
-      bukuTamuQuery = bukuTamuQuery.eq('ID_Stasiun', filterStasiunId);
-    }
-
     //*** Langkah 6: Filter berdasarkan period ***
     const today = dayjs().startOf('day');
     if (period === 'today') {
@@ -458,8 +490,18 @@ export class AdminService {
       ),
     }));
 
+    //*** Langkah 10: Kembalikan response lengkap ***
     return {
-      message: 'Data Buku Tamu berhasil diambil',
+      filter: {
+        period: period || null,
+        startDate: startDate || null,
+        endDate: endDate || null,
+        filterStasiunId: isSuperadmin
+          ? filterStasiunId || null
+          : adminData.ID_Stasiun,
+      },
+      isSuperadmin,
+      count: formattedData.length,
       data: formattedData,
     };
   }

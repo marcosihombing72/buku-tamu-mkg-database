@@ -106,9 +106,18 @@ let AdminService = class AdminService {
         if (adminError || !adminData) {
             throw new common_1.BadRequestException(`Gagal ambil data admin: ${adminError?.message}`);
         }
+        const transformedData = {
+            user_id: adminData.ID_Admin,
+            email: adminData.Email_Admin,
+            nama_depan: adminData.Nama_Depan_Admin,
+            nama_belakang: adminData.Nama_Belakang_Admin,
+            peran: adminData.Peran,
+            foto: adminData.Foto_Admin,
+            stasiun_id: adminData.ID_Stasiun,
+        };
         return {
             message: 'Profil admin berhasil diambil',
-            data: adminData,
+            data: transformedData,
         };
     }
     async deleteOldPhoto(fileUrl) {
@@ -175,6 +184,14 @@ let AdminService = class AdminService {
             fotoUrl = publicUrl;
             updatedFields.push('foto');
         }
+        const { data: existingAdmin, error: existingError } = await supabase
+            .from('Admin')
+            .select('*')
+            .eq('ID_Admin', user_id)
+            .single();
+        if (existingError || !existingAdmin) {
+            throw new common_1.BadRequestException(`Gagal ambil data admin: ${existingError?.message}`);
+        }
         const updatePayload = {};
         if (nama_depan) {
             updatePayload.Nama_Depan_Admin = nama_depan;
@@ -187,18 +204,32 @@ let AdminService = class AdminService {
         if (fotoUrl) {
             updatePayload.Foto_Admin = fotoUrl;
         }
+        let updatedAdmin = null;
         if (Object.keys(updatePayload).length > 0) {
-            const { error: updateError } = await supabase
+            const { data, error: updateError } = await supabase
                 .from('Admin')
                 .update(updatePayload)
-                .eq('ID_Admin', user_id);
+                .eq('ID_Admin', user_id)
+                .select()
+                .single();
             if (updateError) {
                 throw new common_1.BadRequestException(`Gagal update data admin: ${updateError.message}`);
             }
+            updatedAdmin = data;
         }
+        const transformedData = {
+            user_id: user_id,
+            email: existingAdmin.Email_Admin,
+            nama_depan: updatedAdmin?.Nama_Depan_Admin || existingAdmin.Nama_Depan_Admin,
+            nama_belakang: updatedAdmin?.Nama_Belakang_Admin || existingAdmin.Nama_Belakang_Admin,
+            peran: existingAdmin.Peran,
+            foto: updatedAdmin?.Foto_Admin || existingAdmin.Foto_Admin,
+            stasiun_id: existingAdmin.ID_Stasiun,
+        };
         return {
             message: 'Profil admin berhasil diperbarui',
             updatedFields,
+            data: transformedData,
         };
     }
     async getDashboard(user_id, access_token) {
@@ -265,15 +296,6 @@ let AdminService = class AdminService {
         else if (filterStasiunId) {
             bukuTamuQuery = bukuTamuQuery.eq('ID_Stasiun', filterStasiunId);
         }
-        if (!isSuperadmin) {
-            if (!adminData.ID_Stasiun) {
-                throw new common_1.BadRequestException('Admin tidak memiliki ID_Stasiun');
-            }
-            bukuTamuQuery = bukuTamuQuery.eq('ID_Stasiun', adminData.ID_Stasiun);
-        }
-        else if (filterStasiunId) {
-            bukuTamuQuery = bukuTamuQuery.eq('ID_Stasiun', filterStasiunId);
-        }
         const today = (0, dayjs_1.default)().startOf('day');
         if (period === 'today') {
             bukuTamuQuery = bukuTamuQuery.gte('Waktu_Kunjungan', today.toISOString());
@@ -300,7 +322,16 @@ let AdminService = class AdminService {
             Waktu_Kunjungan: (0, dayjs_1.default)(item.Waktu_Kunjungan).format('dddd, D MMMM YYYY, HH.mm'),
         }));
         return {
-            message: 'Data Buku Tamu berhasil diambil',
+            filter: {
+                period: period || null,
+                startDate: startDate || null,
+                endDate: endDate || null,
+                filterStasiunId: isSuperadmin
+                    ? filterStasiunId || null
+                    : adminData.ID_Stasiun,
+            },
+            isSuperadmin,
+            count: formattedData.length,
             data: formattedData,
         };
     }

@@ -19,11 +19,28 @@ export declare class AdminController {
     }>;
     getProfileAdmin(user_id: string, access_token: string): Promise<{
         message: string;
-        data: any;
+        data: {
+            user_id: any;
+            email: any;
+            nama_depan: any;
+            nama_belakang: any;
+            peran: any;
+            foto: any;
+            stasiun_id: any;
+        };
     }>;
     updateProfileAdmin(dto: UpdateProfileAdminDto, foto?: Express.Multer.File): Promise<{
         message: string;
         updatedFields: string[];
+        data: {
+            user_id: string | undefined;
+            email: any;
+            nama_depan: any;
+            nama_belakang: any;
+            peran: any;
+            foto: any;
+            stasiun_id: any;
+        };
     }>;
     getDashboard(access_token: string, user_id: string): Promise<{
         peran: any;
@@ -31,7 +48,14 @@ export declare class AdminController {
         jumlah_tamu: number;
     }>;
     getBukuTamu(access_token: string, user_id: string, period?: 'today' | 'week' | 'month', startDate?: string, endDate?: string, filterStasiunId?: string): Promise<{
-        message: string;
+        filter: {
+            period: "today" | "week" | "month" | null;
+            startDate: string | null;
+            endDate: string | null;
+            filterStasiunId: any;
+        };
+        isSuperadmin: boolean;
+        count: number;
         data: any[];
     }>;
     getBukuTamuHariIni(access_token: string, user_id: string): Promise<{

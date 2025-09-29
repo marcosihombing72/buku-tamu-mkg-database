@@ -33,19 +33,9 @@ export class AdminController {
   }
 
   @Get('profile')
-  @ApiQuery({
-    name: 'user_id',
-    required: true,
-    example: '69fe727f-17e3-4065-a16e-23efb26382cf',
-  })
-  @ApiQuery({
-    name: 'access_token',
-    required: true,
-    example: 'your_access_token_here',
-  })
   async getProfile(
-    @Query('user_id') user_id: string,
-    @Query('access_token') access_token: string,
+    @Headers('access_token') access_token: string,
+    @Headers('user_id') user_id: string,
   ) {
     return this.adminService.getProfile(user_id, access_token);
   }

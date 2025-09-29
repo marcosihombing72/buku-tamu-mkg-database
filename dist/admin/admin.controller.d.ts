@@ -19,7 +19,7 @@ export declare class AdminController {
         message: string;
         email: string;
     }>;
-    getProfile(user_id: string, access_token: string): Promise<{
+    getProfile(access_token: string, user_id: string): Promise<{
         message: string;
         data: {
             user_id: any;

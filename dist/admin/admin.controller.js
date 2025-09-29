@@ -31,7 +31,7 @@ let AdminController = class AdminController {
     async resetPasswordAdmin(dto) {
         return this.adminService.resetPasswordAdmin(dto);
     }
-    async getProfile(user_id, access_token) {
+    async getProfile(access_token, user_id) {
         return this.adminService.getProfile(user_id, access_token);
     }
     async updateProfile(access_token, user_id, dto, foto) {
@@ -70,18 +70,8 @@ __decorate([
 ], AdminController.prototype, "resetPasswordAdmin", null);
 __decorate([
     (0, common_1.Get)('profile'),
-    (0, swagger_1.ApiQuery)({
-        name: 'user_id',
-        required: true,
-        example: '69fe727f-17e3-4065-a16e-23efb26382cf',
-    }),
-    (0, swagger_1.ApiQuery)({
-        name: 'access_token',
-        required: true,
-        example: 'your_access_token_here',
-    }),
-    __param(0, (0, common_1.Query)('user_id')),
-    __param(1, (0, common_1.Query)('access_token')),
+    __param(0, (0, common_1.Headers)('access_token')),
+    __param(1, (0, common_1.Headers)('user_id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)

@@ -1,9 +1,16 @@
-import { Module } from '@nestjs/common';
-import { LokasiController } from './lokasi.controller';
-import { LokasiService } from './lokasi.service';
+import { LokasiController } from '@/lokasi/lokasi.controller';
+import { LokasiService } from '@/lokasi/lokasi.service';
 
+import { SupabaseModule } from '@/supabase/supabase.module';
+import { Module } from '@nestjs/common';
+
+//*** Modul autentikasi Semua ***
 @Module({
+  //*** Import modul Supabase ***
+  imports: [SupabaseModule],
+  //*** Controller dan Service untuk Lokasi ***
   controllers: [LokasiController],
-  providers: [LokasiService]
+  //*** Provider untuk LokasiService ***
+  providers: [LokasiService],
 })
 export class LokasiModule {}

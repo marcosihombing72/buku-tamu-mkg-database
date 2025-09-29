@@ -29,7 +29,11 @@ async function bootstrap() {
         .setTitle('Buku Tamu MKG')
         .setDescription('Buku Tamu MKG')
         .setVersion('1.0')
-        .addBearerAuth()
+        .addBearerAuth({
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+    }, 'access-token')
         .build();
     const document = swagger_1.SwaggerModule.createDocument(app, config);
     swagger_1.SwaggerModule.setup('api', app, document);

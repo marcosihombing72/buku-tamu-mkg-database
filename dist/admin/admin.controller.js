@@ -1,0 +1,161 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AdminController = void 0;
+const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
+const swagger_1 = require("@nestjs/swagger");
+const admin_service_1 = require("./admin.service");
+const login_admin_dto_1 = require("./dto/login-admin.dto");
+const reset_password_admin_dto_1 = require("./dto/reset-password-admin.dto");
+const update_profile_admin_dto_1 = require("./dto/update-profile-admin.dto");
+let AdminController = class AdminController {
+    adminService;
+    constructor(adminService) {
+        this.adminService = adminService;
+    }
+    async loginAdmin(dto) {
+        return this.adminService.loginAdmin(dto);
+    }
+    async resetPasswordAdmin(dto) {
+        return this.adminService.resetPasswordAdmin(dto);
+    }
+    async getProfileAdmin(user_id, access_token) {
+        return this.adminService.getProfileAdmin(user_id, access_token);
+    }
+    async updateProfileAdmin(dto, foto) {
+        return this.adminService.updateProfileAdmin(dto, foto);
+    }
+    async getDashboard(access_token, user_id) {
+        return this.adminService.getDashboard(access_token, user_id);
+    }
+    async getBukuTamu(access_token, user_id, period, startDate, endDate, filterStasiunId) {
+        return this.adminService.getBukuTamu(access_token, user_id, period, startDate, endDate, filterStasiunId);
+    }
+    async getBukuTamuHariIni(access_token, user_id) {
+        return this.adminService.getBukuTamuHariIni(access_token, user_id);
+    }
+    async getBukuTamuMingguIni(access_token, user_id) {
+        return this.adminService.getBukuTamuMingguIni(access_token, user_id);
+    }
+    async getBukuTamuBulanIni(access_token, user_id) {
+        return this.adminService.getBukuTamuBulanIni(access_token, user_id);
+    }
+};
+exports.AdminController = AdminController;
+__decorate([
+    (0, common_1.Post)('login'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [login_admin_dto_1.LoginAdminDto]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "loginAdmin", null);
+__decorate([
+    (0, common_1.Post)('reset-password'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [reset_password_admin_dto_1.ResetPasswordAdminDto]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "resetPasswordAdmin", null);
+__decorate([
+    (0, common_1.Get)('profile'),
+    (0, swagger_1.ApiQuery)({
+        name: 'user_id',
+        required: true,
+        example: '69fe727f-17e3-4065-a16e-23efb26382cf',
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: 'access_token',
+        required: true,
+        example: 'your_access_token_here',
+    }),
+    __param(0, (0, common_1.Query)('user_id')),
+    __param(1, (0, common_1.Query)('access_token')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getProfileAdmin", null);
+__decorate([
+    (0, common_1.Put)('update-profile'),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('foto')),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [update_profile_admin_dto_1.UpdateProfileAdminDto, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "updateProfileAdmin", null);
+__decorate([
+    (0, common_1.Get)('dashboard'),
+    __param(0, (0, common_1.Headers)('access_token')),
+    __param(1, (0, common_1.Headers)('user_id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getDashboard", null);
+__decorate([
+    (0, common_1.Get)('buku-tamu'),
+    (0, swagger_1.ApiQuery)({
+        name: 'period',
+        required: false,
+        enum: ['today', 'week', 'month'],
+        example: 'today',
+    }),
+    (0, swagger_1.ApiQuery)({ name: 'startDate', required: false, example: '2023-10-01' }),
+    (0, swagger_1.ApiQuery)({ name: 'endDate', required: false, example: '2023-10-31' }),
+    (0, swagger_1.ApiQuery)({
+        name: 'filterStasiunId',
+        required: false,
+        example: '5b2df30a-4204-470a-bfff-da645ed475d4',
+    }),
+    __param(0, (0, common_1.Headers)('access_token')),
+    __param(1, (0, common_1.Headers)('user_id')),
+    __param(2, (0, common_1.Query)('period')),
+    __param(3, (0, common_1.Query)('startDate')),
+    __param(4, (0, common_1.Query)('endDate')),
+    __param(5, (0, common_1.Query)('filterStasiunId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String, String, String, String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getBukuTamu", null);
+__decorate([
+    (0, common_1.Get)('buku-tamu/hari-ini'),
+    __param(0, (0, common_1.Headers)('access_token')),
+    __param(1, (0, common_1.Headers)('user_id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getBukuTamuHariIni", null);
+__decorate([
+    (0, common_1.Get)('buku-tamu/minggu-ini'),
+    __param(0, (0, common_1.Headers)('access_token')),
+    __param(1, (0, common_1.Headers)('user_id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getBukuTamuMingguIni", null);
+__decorate([
+    (0, common_1.Get)('buku-tamu/bulan-ini'),
+    __param(0, (0, common_1.Headers)('access_token')),
+    __param(1, (0, common_1.Headers)('user_id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getBukuTamuBulanIni", null);
+exports.AdminController = AdminController = __decorate([
+    (0, swagger_1.ApiTags)('Admin'),
+    (0, common_1.Controller)('admin'),
+    __metadata("design:paramtypes", [admin_service_1.AdminService])
+], AdminController);
+//# sourceMappingURL=admin.controller.js.map

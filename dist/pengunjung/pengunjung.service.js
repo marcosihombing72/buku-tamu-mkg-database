@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PengunjungService = void 0;
 const supabase_service_1 = require("../supabase/supabase.service");
 const common_1 = require("@nestjs/common");
-const uuid_1 = require("uuid");
+const crypto_1 = require("crypto");
 const dayjs_1 = __importDefault(require("dayjs"));
 require("dayjs/locale/id");
 const customParseFormat_1 = __importDefault(require("dayjs/plugin/customParseFormat"));
@@ -82,7 +82,7 @@ let PengunjungService = class PengunjungService {
             throw new common_1.BadRequestException('Ukuran file maksimal 10MB');
         }
         const fileExt = file.originalname.split('.').pop();
-        const fileName = `${(0, uuid_1.v4)()}.${fileExt}`;
+        const fileName = `${(0, crypto_1.randomUUID)()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage
             .from('tanda-tangan')
             .upload(fileName, file.buffer, {

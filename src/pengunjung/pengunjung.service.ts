@@ -1,6 +1,6 @@
 import { SupabaseService } from '@/supabase/supabase.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
@@ -104,7 +104,7 @@ export class PengunjungService {
 
     //*** Langkah 3: Upload file tanda tangan ke Supabase Storage ***
     const fileExt = file.originalname.split('.').pop();
-    const fileName = `${uuidv4()}.${fileExt}`;
+    const fileName = `${randomUUID()}.${fileExt}`;
     const { error: uploadError } = await supabase.storage
       .from('tanda-tangan')
       .upload(fileName, file.buffer, {

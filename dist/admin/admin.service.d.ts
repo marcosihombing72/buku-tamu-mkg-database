@@ -33,20 +33,11 @@ export declare class AdminService {
             stasiun: any;
         };
     }>;
+    updateProfile(dto: UpdateProfileAdminDto & {
+        access_token: string;
+        user_id: string;
+    }, foto?: Express.Multer.File): Promise<any>;
     private deleteOldPhoto;
-    updateProfileAdmin(dto: UpdateProfileAdminDto, foto?: Express.Multer.File): Promise<{
-        message: string;
-        updatedFields: string[];
-        data: {
-            user_id: string | undefined;
-            email: any;
-            nama_depan: any;
-            nama_belakang: any;
-            peran: any;
-            foto: any;
-            stasiun_id: any;
-        };
-    }>;
     getDashboard(user_id: string, access_token: string): Promise<{
         peran: any;
         id_stasiun: any;

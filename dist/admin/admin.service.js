@@ -138,117 +138,120 @@ let AdminService = class AdminService {
             data: transformedData,
         };
     }
-    async deleteOldPhoto(fileUrl) {
+    async updateProfile(dto, foto) {
         const supabase = this.supabaseService.getClient();
-        try {
-            const path = fileUrl.split('/').pop();
-            if (!path) {
-                console.warn('Gagal menghapus foto lama: path tidak ditemukan');
-                return;
-            }
-            await supabase.storage.from('foto-admin').remove([path]);
+        const { user_id, access_token, nama_depan, nama_belakang, password } = dto;
+        const { data: { user }, error: authError, } = await supabase.auth.getUser(access_token);
+        if (authError || !user?.id || user.id !== user_id) {
+            throw new common_1.UnauthorizedException('Token tidak valid atau tidak sesuai');
         }
-        catch (err) {
-            console.warn('Gagal menghapus foto lama:', err.message);
-        }
-    }
-    async updateProfileAdmin(dto, foto) {
-        const supabase = this.supabaseService.getClient();
-        const supabaseAdmin = this.supabaseService.getAdminClient();
-        const { access_token, user_id, nama_depan, nama_belakang, password } = dto;
-        const { data: userData, error: userError } = await supabase.auth.getUser(access_token);
-        if (userError || !userData?.user) {
-            throw new common_1.UnauthorizedException('Token tidak valid atau sudah kedaluwarsa');
-        }
-        const updatedFields = [];
-        let fotoUrl = null;
-        if (password) {
-            if (!user_id) {
-                throw new common_1.BadRequestException('User ID is required to update password');
-            }
-            const { error: pwError } = await supabaseAdmin.auth.admin.updateUserById(user_id, { password });
-            if (pwError) {
-                throw new common_1.BadRequestException(`Gagal memperbarui password: ${pwError.message}`);
-            }
-            updatedFields.push('password');
-        }
-        if (foto) {
-            if (!['image/jpeg', 'image/png'].includes(foto.mimetype)) {
-                throw new common_1.BadRequestException('Format file harus JPG atau PNG');
-            }
-            if (foto.size > 2 * 1024 * 1024) {
-                throw new common_1.BadRequestException('Ukuran file maksimal 2MB');
-            }
-            const { data: oldData } = await supabase
-                .from('Admin')
-                .select('Foto_Admin')
-                .eq('ID_Admin', user_id)
-                .single();
-            if (oldData?.Foto_Admin) {
-                await this.deleteOldPhoto(oldData.Foto_Admin);
-            }
-            const fileExt = foto.originalname.split('.').pop();
-            const fileName = `${user_id}.${fileExt}`;
-            const { error: uploadError } = await supabase.storage
-                .from('foto-admin')
-                .upload(fileName, foto.buffer, {
-                contentType: foto.mimetype,
-                upsert: true,
-            });
-            if (uploadError) {
-                throw new common_1.BadRequestException(`Gagal upload foto: ${uploadError.message}`);
-            }
-            const { data: { publicUrl }, } = supabase.storage.from('foto-admin').getPublicUrl(fileName);
-            fotoUrl = publicUrl;
-            updatedFields.push('foto');
-        }
-        const { data: existingAdmin, error: existingError } = await supabase
+        const { data: existingAdmin, error: adminError } = await supabase
             .from('Admin')
-            .select('*')
+            .select('Nama_Depan_Admin, Nama_Belakang_Admin, Foto_Admin')
             .eq('ID_Admin', user_id)
             .single();
-        if (existingError || !existingAdmin) {
-            throw new common_1.BadRequestException(`Gagal ambil data admin: ${existingError?.message}`);
+        if (adminError || !existingAdmin) {
+            throw new common_1.BadRequestException('Data admin tidak ditemukan');
         }
-        const updatePayload = {};
-        if (nama_depan) {
-            updatePayload.Nama_Depan_Admin = nama_depan;
-            updatedFields.push('nama_depan');
-        }
-        if (nama_belakang) {
-            updatePayload.Nama_Belakang_Admin = nama_belakang;
-            updatedFields.push('nama_belakang');
-        }
-        if (fotoUrl) {
-            updatePayload.Foto_Admin = fotoUrl;
-        }
-        let updatedAdmin = null;
-        if (Object.keys(updatePayload).length > 0) {
-            const { data, error: updateError } = await supabase
-                .from('Admin')
-                .update(updatePayload)
-                .eq('ID_Admin', user_id)
-                .select()
-                .single();
-            if (updateError) {
-                throw new common_1.BadRequestException(`Gagal update data admin: ${updateError.message}`);
+        let fotoUrl = existingAdmin.Foto_Admin;
+        let uploadedFileName = null;
+        let updatedFields = [];
+        try {
+            if (foto) {
+                if (!['image/jpeg', 'image/png'].includes(foto.mimetype)) {
+                    throw new common_1.BadRequestException('Format file harus JPG atau PNG');
+                }
+                if (foto.size > 2 * 1024 * 1024) {
+                    throw new common_1.BadRequestException('Ukuran file maksimal 2MB');
+                }
+                const fileExt = foto.originalname.split('.').pop();
+                uploadedFileName = `${user_id}.${fileExt}`;
+                if (fotoUrl) {
+                    await this.deleteOldPhoto(fotoUrl);
+                }
+                const { error: uploadError } = await supabase.storage
+                    .from('foto-admin')
+                    .upload(uploadedFileName, foto.buffer, {
+                    contentType: foto.mimetype,
+                    upsert: true,
+                });
+                if (uploadError) {
+                    throw new common_1.BadRequestException('Gagal mengunggah foto baru');
+                }
+                fotoUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/foto-admin/${uploadedFileName}`;
+                updatedFields.push('foto');
             }
-            updatedAdmin = data;
+            if (password) {
+                const { error: pwError } = await supabase.auth.admin.updateUserById(user_id, { password });
+                if (pwError) {
+                    throw new common_1.BadRequestException('Gagal memperbarui password');
+                }
+                updatedFields.push('password');
+            }
+            const updatePayload = {};
+            if (nama_depan && nama_depan !== existingAdmin.Nama_Depan_Admin) {
+                updatePayload.Nama_Depan_Admin = nama_depan;
+                updatedFields.push('nama_depan');
+            }
+            if (nama_belakang &&
+                nama_belakang !== existingAdmin.Nama_Belakang_Admin) {
+                updatePayload.Nama_Belakang_Admin = nama_belakang;
+                updatedFields.push('nama_belakang');
+            }
+            if (fotoUrl && fotoUrl !== existingAdmin.Foto_Admin) {
+                updatePayload.Foto_Admin = fotoUrl;
+            }
+            if (Object.keys(updatePayload).length > 0) {
+                const { error: updateError } = await supabase
+                    .from('Admin')
+                    .update(updatePayload)
+                    .eq('ID_Admin', user_id);
+                if (updateError) {
+                    throw new common_1.BadRequestException('Gagal memperbarui profil admin');
+                }
+            }
+            const { data: updatedAdmin } = await supabase
+                .from('Admin')
+                .select('Nama_Depan_Admin, Nama_Belakang_Admin, Foto_Admin')
+                .eq('ID_Admin', user_id)
+                .single();
+            const transformedData = {
+                nama_depan: updatedAdmin?.Nama_Depan_Admin || existingAdmin.Nama_Depan_Admin,
+                nama_belakang: updatedAdmin?.Nama_Belakang_Admin ||
+                    existingAdmin.Nama_Belakang_Admin,
+                foto: updatedAdmin?.Foto_Admin || existingAdmin.Foto_Admin,
+            };
+            return {
+                message: updatedFields.length > 0
+                    ? 'Profil admin berhasil diperbarui'
+                    : 'Tidak ada perubahan yang dilakukan',
+                data: transformedData,
+                updated_fields: updatedFields,
+            };
         }
-        const transformedData = {
-            user_id: user_id,
-            email: existingAdmin.Email_Admin,
-            nama_depan: updatedAdmin?.Nama_Depan_Admin || existingAdmin.Nama_Depan_Admin,
-            nama_belakang: updatedAdmin?.Nama_Belakang_Admin || existingAdmin.Nama_Belakang_Admin,
-            peran: existingAdmin.Peran,
-            foto: updatedAdmin?.Foto_Admin || existingAdmin.Foto_Admin,
-            stasiun_id: existingAdmin.ID_Stasiun,
-        };
-        return {
-            message: 'Profil admin berhasil diperbarui',
-            updatedFields,
-            data: transformedData,
-        };
+        catch (error) {
+            if (uploadedFileName) {
+                await supabase.storage
+                    .from('foto-admin')
+                    .remove([uploadedFileName])
+                    .catch((cleanupError) => {
+                    console.error('Gagal menghapus foto yang baru diupload:', cleanupError);
+                });
+            }
+            throw error;
+        }
+    }
+    async deleteOldPhoto(fotoUrl) {
+        const supabase = this.supabaseService.getClient();
+        try {
+            const oldFileName = fotoUrl.split('/').pop();
+            if (oldFileName) {
+                await supabase.storage.from('foto-admin').remove([oldFileName]);
+            }
+        }
+        catch (err) {
+            console.error('Gagal menghapus foto lama:', err);
+        }
     }
     async getDashboard(user_id, access_token) {
         const supabase = this.supabaseService.getClient();

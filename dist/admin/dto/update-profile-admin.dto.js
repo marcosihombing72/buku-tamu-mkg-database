@@ -13,29 +13,12 @@ exports.UpdateProfileAdminDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 class UpdateProfileAdminDto {
-    access_token;
-    user_id;
     nama_depan;
     nama_belakang;
     password;
     foto;
 }
 exports.UpdateProfileAdminDto = UpdateProfileAdminDto;
-__decorate([
-    (0, swagger_1.ApiProperty)({ example: 'your-access_token', required: false }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], UpdateProfileAdminDto.prototype, "access_token", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        example: '69fe727f-17e3-4065-a16e-23efb26382cf',
-        required: false,
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], UpdateProfileAdminDto.prototype, "user_id", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({ example: 'Nama depan admin', required: false }),
     (0, class_validator_1.IsOptional)(),

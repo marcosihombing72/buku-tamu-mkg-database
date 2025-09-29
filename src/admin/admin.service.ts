@@ -189,174 +189,170 @@ export class AdminService {
     };
   }
 
-  //*** fungsi untuk menghapus foto lama dari storage Supabase ***
-  private async deleteOldPhoto(fileUrl: string) {
-    //*** Langkah 1: Dapatkan client Supabase ***
-    const supabase = this.supabaseService.getClient();
-
-    //*** Langkah 2: Hapus file dari storage Supabase ***
-    try {
-      const path = fileUrl.split('/').pop();
-      if (!path) {
-        console.warn('Gagal menghapus foto lama: path tidak ditemukan');
-        return;
-      }
-      await supabase.storage.from('foto-admin').remove([path]);
-    } catch (err) {
-      console.warn('Gagal menghapus foto lama:', err.message);
-    }
-  }
-
-  //*** Fungsi untuk memperbarui profil admin ***
-  async updateProfileAdmin(
-    dto: UpdateProfileAdminDto,
+  async updateProfile(
+    dto: UpdateProfileAdminDto & {
+      access_token: string;
+      user_id: string;
+    },
     foto?: Express.Multer.File,
-  ) {
-    //*** Langkah 1: Dapatkan client Supabase dan Admin ***
+  ): Promise<any> {
     const supabase = this.supabaseService.getClient();
-    const supabaseAdmin = this.supabaseService.getAdminClient();
 
-    //*** Ekstrak data dari DTO ***
-    const { access_token, user_id, nama_depan, nama_belakang, password } = dto;
+    const { user_id, access_token, nama_depan, nama_belakang, password } = dto;
 
-    //*** Langkah 2: Verifikasi token ***
-    const { data: userData, error: userError } =
-      await supabase.auth.getUser(access_token);
-    if (userError || !userData?.user) {
-      throw new UnauthorizedException(
-        'Token tidak valid atau sudah kedaluwarsa',
-      );
+    // 1. Verify authentication
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser(access_token);
+
+    if (authError || !user?.id || user.id !== user_id) {
+      throw new UnauthorizedException('Token tidak valid atau tidak sesuai');
     }
 
-    const updatedFields: string[] = [];
-    let fotoUrl: string | null = null;
-
-    //*** Langkah 3: Update password (jika ada) ***
-    if (password) {
-      if (!user_id) {
-        throw new BadRequestException('User ID is required to update password');
-      }
-      const { error: pwError } = await supabaseAdmin.auth.admin.updateUserById(
-        user_id,
-        { password },
-      );
-      if (pwError) {
-        throw new BadRequestException(
-          `Gagal memperbarui password: ${pwError.message}`,
-        );
-      }
-      updatedFields.push('password');
-    }
-
-    //*** Langkah 4: Upload foto (jika ada) ***
-    if (foto) {
-      // Validate file
-      if (!['image/jpeg', 'image/png'].includes(foto.mimetype)) {
-        throw new BadRequestException('Format file harus JPG atau PNG');
-      }
-      if (foto.size > 2 * 1024 * 1024) {
-        throw new BadRequestException('Ukuran file maksimal 2MB');
-      }
-
-      // Ambil foto lama untuk dihapus
-      const { data: oldData } = await supabase
-        .from('Admin')
-        .select('Foto_Admin')
-        .eq('ID_Admin', user_id)
-        .single();
-
-      if (oldData?.Foto_Admin) {
-        await this.deleteOldPhoto(oldData.Foto_Admin);
-      }
-
-      // Upload foto baru
-      const fileExt = foto.originalname.split('.').pop();
-      const fileName = `${user_id}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('foto-admin')
-        .upload(fileName, foto.buffer, {
-          contentType: foto.mimetype,
-          upsert: true,
-        });
-
-      if (uploadError) {
-        throw new BadRequestException(
-          `Gagal upload foto: ${uploadError.message}`,
-        );
-      }
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('foto-admin').getPublicUrl(fileName);
-
-      fotoUrl = publicUrl;
-      updatedFields.push('foto');
-    }
-
-    //*** Langkah 5: Ambil data lama Admin ***
-    const { data: existingAdmin, error: existingError } = await supabase
+    // 2. Get existing admin data
+    const { data: existingAdmin, error: adminError } = await supabase
       .from('Admin')
-      .select('*')
+      .select('Nama_Depan_Admin, Nama_Belakang_Admin, Foto_Admin')
       .eq('ID_Admin', user_id)
       .single();
 
-    if (existingError || !existingAdmin) {
-      throw new BadRequestException(
-        `Gagal ambil data admin: ${existingError?.message}`,
-      );
+    if (adminError || !existingAdmin) {
+      throw new BadRequestException('Data admin tidak ditemukan');
     }
 
-    //*** Langkah 6: Update tabel Admin ***
-    const updatePayload: any = {};
-    if (nama_depan) {
-      updatePayload.Nama_Depan_Admin = nama_depan;
-      updatedFields.push('nama_depan');
-    }
-    if (nama_belakang) {
-      updatePayload.Nama_Belakang_Admin = nama_belakang;
-      updatedFields.push('nama_belakang');
-    }
-    if (fotoUrl) {
-      updatePayload.Foto_Admin = fotoUrl;
-    }
+    let fotoUrl = existingAdmin.Foto_Admin;
+    let uploadedFileName: string | null = null;
+    let updatedFields: string[] = [];
 
-    let updatedAdmin: any = null;
-    if (Object.keys(updatePayload).length > 0) {
-      const { data, error: updateError } = await supabase
+    try {
+      // 3. Handle photo upload if exists
+      if (foto) {
+        // Validate file
+        if (!['image/jpeg', 'image/png'].includes(foto.mimetype)) {
+          throw new BadRequestException('Format file harus JPG atau PNG');
+        }
+        if (foto.size > 2 * 1024 * 1024) {
+          throw new BadRequestException('Ukuran file maksimal 2MB');
+        }
+
+        const fileExt = foto.originalname.split('.').pop();
+        uploadedFileName = `${user_id}.${fileExt}`;
+
+        // Delete old photo via helper
+        if (fotoUrl) {
+          await this.deleteOldPhoto(fotoUrl);
+        }
+
+        // Upload new photo
+        const { error: uploadError } = await supabase.storage
+          .from('foto-admin')
+          .upload(uploadedFileName, foto.buffer, {
+            contentType: foto.mimetype,
+            upsert: true,
+          });
+
+        if (uploadError) {
+          throw new BadRequestException('Gagal mengunggah foto baru');
+        }
+
+        fotoUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/foto-admin/${uploadedFileName}`;
+        updatedFields.push('foto');
+      }
+
+      // 4. Update password if provided
+      if (password) {
+        const { error: pwError } = await supabase.auth.admin.updateUserById(
+          user_id,
+          { password },
+        );
+        if (pwError) {
+          throw new BadRequestException('Gagal memperbarui password');
+        }
+        updatedFields.push('password');
+      }
+
+      // 5. Prepare update payload
+      const updatePayload: Record<string, any> = {};
+      if (nama_depan && nama_depan !== existingAdmin.Nama_Depan_Admin) {
+        updatePayload.Nama_Depan_Admin = nama_depan;
+        updatedFields.push('nama_depan');
+      }
+      if (
+        nama_belakang &&
+        nama_belakang !== existingAdmin.Nama_Belakang_Admin
+      ) {
+        updatePayload.Nama_Belakang_Admin = nama_belakang;
+        updatedFields.push('nama_belakang');
+      }
+      if (fotoUrl && fotoUrl !== existingAdmin.Foto_Admin) {
+        updatePayload.Foto_Admin = fotoUrl;
+      }
+
+      // 6. Update admin profile if there are changes
+      if (Object.keys(updatePayload).length > 0) {
+        const { error: updateError } = await supabase
+          .from('Admin')
+          .update(updatePayload)
+          .eq('ID_Admin', user_id);
+
+        if (updateError) {
+          throw new BadRequestException('Gagal memperbarui profil admin');
+        }
+      }
+
+      // Get updated admin data
+      const { data: updatedAdmin } = await supabase
         .from('Admin')
-        .update(updatePayload)
+        .select('Nama_Depan_Admin, Nama_Belakang_Admin, Foto_Admin')
         .eq('ID_Admin', user_id)
-        .select()
         .single();
 
-      if (updateError) {
-        throw new BadRequestException(
-          `Gagal update data admin: ${updateError.message}`,
-        );
+      const transformedData = {
+        nama_depan:
+          updatedAdmin?.Nama_Depan_Admin || existingAdmin.Nama_Depan_Admin,
+        nama_belakang:
+          updatedAdmin?.Nama_Belakang_Admin ||
+          existingAdmin.Nama_Belakang_Admin,
+        foto: updatedAdmin?.Foto_Admin || existingAdmin.Foto_Admin,
+      };
+
+      return {
+        message:
+          updatedFields.length > 0
+            ? 'Profil admin berhasil diperbarui'
+            : 'Tidak ada perubahan yang dilakukan',
+        data: transformedData,
+        updated_fields: updatedFields,
+      };
+    } catch (error) {
+      // Cleanup if error occurs after photo upload
+      if (uploadedFileName) {
+        await supabase.storage
+          .from('foto-admin')
+          .remove([uploadedFileName])
+          .catch((cleanupError) => {
+            console.error(
+              'Gagal menghapus foto yang baru diupload:',
+              cleanupError,
+            );
+          });
       }
-      updatedAdmin = data;
+
+      throw error;
     }
+  }
 
-    //*** Langkah 7: Transformasi data untuk response ***
-    const transformedData = {
-      user_id: user_id,
-      email: existingAdmin.Email_Admin,
-      nama_depan:
-        updatedAdmin?.Nama_Depan_Admin || existingAdmin.Nama_Depan_Admin,
-      nama_belakang:
-        updatedAdmin?.Nama_Belakang_Admin || existingAdmin.Nama_Belakang_Admin,
-      peran: existingAdmin.Peran,
-      foto: updatedAdmin?.Foto_Admin || existingAdmin.Foto_Admin,
-      stasiun_id: existingAdmin.ID_Stasiun,
-    };
-
-    //*** Langkah 8: Kembalikan response ***
-    return {
-      message: 'Profil admin berhasil diperbarui',
-      updatedFields,
-      data: transformedData,
-    };
+  private async deleteOldPhoto(fotoUrl: string): Promise<void> {
+    const supabase = this.supabaseService.getClient();
+    try {
+      const oldFileName = fotoUrl.split('/').pop();
+      if (oldFileName) {
+        await supabase.storage.from('foto-admin').remove([oldFileName]);
+      }
+    } catch (err) {
+      console.error('Gagal menghapus foto lama:', err);
+    }
   }
 
   //*** Fungsi untuk mendapatkan data dashboard admin ***

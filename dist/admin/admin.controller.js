@@ -34,8 +34,8 @@ let AdminController = class AdminController {
     async getProfileAdmin(user_id, access_token) {
         return this.adminService.getProfileAdmin(user_id, access_token);
     }
-    async updateProfileAdmin(dto, foto) {
-        return this.adminService.updateProfileAdmin(dto, foto);
+    async updateProfile(access_token, user_id, dto, foto) {
+        return this.adminService.updateProfile({ ...dto, access_token, user_id }, foto);
     }
     async getDashboard(access_token, user_id) {
         return this.adminService.getDashboard(access_token, user_id);
@@ -90,12 +90,14 @@ __decorate([
     (0, common_1.Put)('update-profile'),
     (0, swagger_1.ApiConsumes)('multipart/form-data'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('foto')),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.UploadedFile)()),
+    __param(0, (0, common_1.Headers)('access_token')),
+    __param(1, (0, common_1.Headers)('user_id')),
+    __param(2, (0, common_1.Body)()),
+    __param(3, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [update_profile_admin_dto_1.UpdateProfileAdminDto, Object]),
+    __metadata("design:paramtypes", [String, String, update_profile_admin_dto_1.UpdateProfileAdminDto, Object]),
     __metadata("design:returntype", Promise)
-], AdminController.prototype, "updateProfileAdmin", null);
+], AdminController.prototype, "updateProfile", null);
 __decorate([
     (0, common_1.Get)('dashboard'),
     __param(0, (0, common_1.Headers)('access_token')),

@@ -53,11 +53,16 @@ export class AdminController {
   @Put('update-profile')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('foto'))
-  async updateProfileAdmin(
+  async updateProfile(
+    @Headers('access_token') access_token: string,
+    @Headers('user_id') user_id: string,
     @Body() dto: UpdateProfileAdminDto,
     @UploadedFile() foto?: Express.Multer.File,
   ) {
-    return this.adminService.updateProfileAdmin(dto, foto);
+    return this.adminService.updateProfile(
+      { ...dto, access_token, user_id },
+      foto,
+    );
   }
 
   @Get('dashboard')

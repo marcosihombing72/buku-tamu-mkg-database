@@ -32,19 +32,7 @@ export declare class AdminController {
             stasiun: any;
         };
     }>;
-    updateProfileAdmin(dto: UpdateProfileAdminDto, foto?: Express.Multer.File): Promise<{
-        message: string;
-        updatedFields: string[];
-        data: {
-            user_id: string | undefined;
-            email: any;
-            nama_depan: any;
-            nama_belakang: any;
-            peran: any;
-            foto: any;
-            stasiun_id: any;
-        };
-    }>;
+    updateProfile(access_token: string, user_id: string, dto: UpdateProfileAdminDto, foto?: Express.Multer.File): Promise<any>;
     getDashboard(access_token: string, user_id: string): Promise<{
         peran: any;
         id_stasiun: any;

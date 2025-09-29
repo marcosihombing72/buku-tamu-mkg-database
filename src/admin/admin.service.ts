@@ -43,17 +43,16 @@ export class AdminService {
     }
 
     let session = loginData.session;
+    const user = loginData.user;
 
     //*** Langkah 3: Perpanjang masa berlaku token ***
     try {
-      // Alternatif 1: Gunakan refreshSession()
       const { data: refreshedData, error: refreshError } =
         await supabase.auth.refreshSession();
       if (!refreshError && refreshedData?.session) {
         session = refreshedData.session;
       }
 
-      // Alternatif 2: Update session (tanpa expires_in)
       await supabase.auth.setSession({
         access_token: session.access_token,
         refresh_token: session.refresh_token,
@@ -78,12 +77,11 @@ export class AdminService {
     //*** Langkah 5: Return response ***
     return {
       message: 'Login berhasil',
-      admin: adminData,
-      token: {
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-        expires_at: session.expires_at,
-      },
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+      user_id: user.id,
+      role: adminData.Peran,
+      expires_at: session.expires_at,
     };
   }
 

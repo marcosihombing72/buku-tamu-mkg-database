@@ -7,12 +7,11 @@ export declare class AdminController {
     constructor(adminService: AdminService);
     loginAdmin(dto: LoginAdminDto): Promise<{
         message: string;
-        admin: any;
-        token: {
-            access_token: string;
-            refresh_token: string;
-            expires_at: number | undefined;
-        };
+        access_token: string;
+        refresh_token: string;
+        user_id: string;
+        role: any;
+        expires_at: number | undefined;
     }>;
     resetPasswordAdmin(dto: ResetPasswordAdminDto): Promise<{
         message: string;

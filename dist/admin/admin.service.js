@@ -37,6 +37,7 @@ let AdminService = class AdminService {
             throw new common_1.UnauthorizedException(`Login gagal: ${loginError?.message || 'Email atau password salah'}`);
         }
         let session = loginData.session;
+        const user = loginData.user;
         try {
             const { data: refreshedData, error: refreshError } = await supabase.auth.refreshSession();
             if (!refreshError && refreshedData?.session) {
@@ -60,12 +61,11 @@ let AdminService = class AdminService {
         }
         return {
             message: 'Login berhasil',
-            admin: adminData,
-            token: {
-                access_token: session.access_token,
-                refresh_token: session.refresh_token,
-                expires_at: session.expires_at,
-            },
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+            user_id: user.id,
+            role: adminData.Peran,
+            expires_at: session.expires_at,
         };
     }
     async resetPasswordAdmin(dto) {

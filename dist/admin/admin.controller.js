@@ -31,8 +31,8 @@ let AdminController = class AdminController {
     async resetPasswordAdmin(dto) {
         return this.adminService.resetPasswordAdmin(dto);
     }
-    async getProfileAdmin(user_id, access_token) {
-        return this.adminService.getProfileAdmin(user_id, access_token);
+    async getProfile(user_id, access_token) {
+        return this.adminService.getProfile(user_id, access_token);
     }
     async updateProfile(access_token, user_id, dto, foto) {
         return this.adminService.updateProfile({ ...dto, access_token, user_id }, foto);
@@ -85,7 +85,7 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
-], AdminController.prototype, "getProfileAdmin", null);
+], AdminController.prototype, "getProfile", null);
 __decorate([
     (0, common_1.Put)('update-profile'),
     (0, swagger_1.ApiConsumes)('multipart/form-data'),

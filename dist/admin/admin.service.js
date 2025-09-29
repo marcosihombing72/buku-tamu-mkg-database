@@ -94,25 +94,29 @@ let AdminService = class AdminService {
             email: dto.email,
         };
     }
-    async getProfileAdmin(user_id, access_token) {
+    async getProfile(user_id, access_token) {
         const supabase = this.supabaseService.getClient();
-        const { data: userData, error: userError } = await supabase.auth.getUser(access_token);
-        if (userError || !userData?.user) {
-            throw new common_1.UnauthorizedException(`Token tidak valid atau sudah kedaluwarsa`);
+        const { data: { user }, error, } = await supabase.auth.getUser(access_token);
+        if (error || !user?.id || user.id !== user_id) {
+            console.error('Invalid token or mismatch:', {
+                error,
+                tokenUserId: user?.id,
+                requestedUserId: user_id,
+            });
+            throw new common_1.UnauthorizedException('Invalid token or user mismatch');
         }
         const { data: adminData, error: adminError } = await supabase
             .from('Admin')
             .select(`
-        ID_Admin, 
-        Email_Admin, 
-        Nama_Depan_Admin, 
-        Nama_Belakang_Admin, 
-        Peran,
-        Foto_Admin, 
-        ID_Stasiun,
-        Stasiun:ID_Stasiun(Nama_Stasiun)
+      ID_Admin, 
+      Email_Admin, 
+      Nama_Depan_Admin, 
+      Nama_Belakang_Admin, 
+      Peran,
+      Foto_Admin, 
+      ID_Stasiun
       `)
-            .eq('ID_Admin', user_id)
+            .eq('ID_Admin', user.id)
             .single();
         if (adminError) {
             console.error('Admin data fetch error:', adminError);
@@ -129,12 +133,9 @@ let AdminService = class AdminService {
             peran: adminData.Peran,
             foto: adminData.Foto_Admin,
             stasiun_id: adminData.ID_Stasiun,
-            stasiun: adminData.Stasiun && adminData.Stasiun.length > 0
-                ? adminData.Stasiun[0].Nama_Stasiun
-                : null,
         };
         return {
-            message: 'Profil admin berhasil diambil',
+            message: 'Admin profile retrieved successfully',
             data: transformedData,
         };
     }

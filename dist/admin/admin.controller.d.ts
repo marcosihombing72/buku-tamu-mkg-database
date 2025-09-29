@@ -19,7 +19,7 @@ export declare class AdminController {
         message: string;
         email: string;
     }>;
-    getProfileAdmin(user_id: string, access_token: string): Promise<{
+    getProfile(user_id: string, access_token: string): Promise<{
         message: string;
         data: {
             user_id: any;
@@ -29,7 +29,6 @@ export declare class AdminController {
             peran: any;
             foto: any;
             stasiun_id: any;
-            stasiun: any;
         };
     }>;
     updateProfile(access_token: string, user_id: string, dto: UpdateProfileAdminDto, foto?: Express.Multer.File): Promise<any>;

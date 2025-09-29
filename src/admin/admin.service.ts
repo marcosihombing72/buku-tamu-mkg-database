@@ -127,35 +127,40 @@ export class AdminService {
   }
 
   //*** Fungsi untuk mendapatkan profil admin ***
-  async getProfileAdmin(user_id: string, access_token: string) {
-    //*** Langkah 1: Dapatkan client Supabase ***
+  async getProfile(user_id: string, access_token: string) {
+    // 1. Ambil client Supabase
     const supabase = this.supabaseService.getClient();
 
-    //*** Langkah 2: Verifikasi token Supabase ***
-    const { data: userData, error: userError } =
-      await supabase.auth.getUser(access_token);
-    if (userError || !userData?.user) {
-      throw new UnauthorizedException(
-        `Token tidak valid atau sudah kedaluwarsa`,
-      );
+    // 2. Verifikasi access_token
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(access_token);
+
+    if (error || !user?.id || user.id !== user_id) {
+      console.error('Invalid token or mismatch:', {
+        error,
+        tokenUserId: user?.id,
+        requestedUserId: user_id,
+      });
+      throw new UnauthorizedException('Invalid token or user mismatch');
     }
 
-    //*** Langkah 3: Query data admin dari tabel Admin + relasi Stasiun ***
+    // 3. Ambil data admin dari tabel Admin
     const { data: adminData, error: adminError } = await supabase
       .from('Admin')
       .select(
         `
-        ID_Admin, 
-        Email_Admin, 
-        Nama_Depan_Admin, 
-        Nama_Belakang_Admin, 
-        Peran,
-        Foto_Admin, 
-        ID_Stasiun,
-        Stasiun:ID_Stasiun(Nama_Stasiun)
+      ID_Admin, 
+      Email_Admin, 
+      Nama_Depan_Admin, 
+      Nama_Belakang_Admin, 
+      Peran,
+      Foto_Admin, 
+      ID_Stasiun
       `,
       )
-      .eq('ID_Admin', user_id)
+      .eq('ID_Admin', user.id)
       .single();
 
     if (adminError) {
@@ -167,7 +172,7 @@ export class AdminService {
       throw new NotFoundException('Admin not found');
     }
 
-    //*** Langkah 4: Transformasi data admin ***
+    // 4. Transformasi data response
     const transformedData = {
       user_id: adminData.ID_Admin,
       email: adminData.Email_Admin,
@@ -176,15 +181,10 @@ export class AdminService {
       peran: adminData.Peran,
       foto: adminData.Foto_Admin,
       stasiun_id: adminData.ID_Stasiun,
-      stasiun:
-        adminData.Stasiun && adminData.Stasiun.length > 0
-          ? adminData.Stasiun[0].Nama_Stasiun
-          : null,
     };
 
-    //*** Langkah 5: Kembalikan response ***
     return {
-      message: 'Profil admin berhasil diambil',
+      message: 'Admin profile retrieved successfully',
       data: transformedData,
     };
   }

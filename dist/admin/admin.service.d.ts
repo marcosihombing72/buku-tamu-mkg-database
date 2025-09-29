@@ -20,7 +20,7 @@ export declare class AdminService {
         message: string;
         email: string;
     }>;
-    getProfileAdmin(user_id: string, access_token: string): Promise<{
+    getProfile(user_id: string, access_token: string): Promise<{
         message: string;
         data: {
             user_id: any;
@@ -30,7 +30,6 @@ export declare class AdminService {
             peran: any;
             foto: any;
             stasiun_id: any;
-            stasiun: any;
         };
     }>;
     updateProfile(dto: UpdateProfileAdminDto & {

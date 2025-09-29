@@ -43,11 +43,11 @@ export class AdminController {
     required: true,
     example: 'your_access_token_here',
   })
-  async getProfileAdmin(
+  async getProfile(
     @Query('user_id') user_id: string,
     @Query('access_token') access_token: string,
   ) {
-    return this.adminService.getProfileAdmin(user_id, access_token);
+    return this.adminService.getProfile(user_id, access_token);
   }
 
   @Put('update-profile')

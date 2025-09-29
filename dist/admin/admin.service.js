@@ -102,11 +102,24 @@ let AdminService = class AdminService {
         }
         const { data: adminData, error: adminError } = await supabase
             .from('Admin')
-            .select('*')
+            .select(`
+        ID_Admin, 
+        Email_Admin, 
+        Nama_Depan_Admin, 
+        Nama_Belakang_Admin, 
+        Peran,
+        Foto_Admin, 
+        ID_Stasiun,
+        Stasiun:ID_Stasiun(Nama_Stasiun)
+      `)
             .eq('ID_Admin', user_id)
             .single();
-        if (adminError || !adminData) {
-            throw new common_1.BadRequestException(`Gagal ambil data admin: ${adminError?.message}`);
+        if (adminError) {
+            console.error('Admin data fetch error:', adminError);
+            throw new common_1.BadRequestException('Failed to fetch admin data');
+        }
+        if (!adminData) {
+            throw new common_1.NotFoundException('Admin not found');
         }
         const transformedData = {
             user_id: adminData.ID_Admin,
@@ -116,6 +129,9 @@ let AdminService = class AdminService {
             peran: adminData.Peran,
             foto: adminData.Foto_Admin,
             stasiun_id: adminData.ID_Stasiun,
+            stasiun: adminData.Stasiun && adminData.Stasiun.length > 0
+                ? adminData.Stasiun[0].Nama_Stasiun
+                : null,
         };
         return {
             message: 'Profil admin berhasil diambil',

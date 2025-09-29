@@ -140,17 +140,31 @@ export class AdminService {
       );
     }
 
-    //*** Langkah 3: Query data admin dari tabel Admin ***
+    //*** Langkah 3: Query data admin dari tabel Admin + relasi Stasiun ***
     const { data: adminData, error: adminError } = await supabase
       .from('Admin')
-      .select('*')
+      .select(
+        `
+        ID_Admin, 
+        Email_Admin, 
+        Nama_Depan_Admin, 
+        Nama_Belakang_Admin, 
+        Peran,
+        Foto_Admin, 
+        ID_Stasiun,
+        Stasiun:ID_Stasiun(Nama_Stasiun)
+      `,
+      )
       .eq('ID_Admin', user_id)
       .single();
 
-    if (adminError || !adminData) {
-      throw new BadRequestException(
-        `Gagal ambil data admin: ${adminError?.message}`,
-      );
+    if (adminError) {
+      console.error('Admin data fetch error:', adminError);
+      throw new BadRequestException('Failed to fetch admin data');
+    }
+
+    if (!adminData) {
+      throw new NotFoundException('Admin not found');
     }
 
     //*** Langkah 4: Transformasi data admin ***
@@ -162,6 +176,10 @@ export class AdminService {
       peran: adminData.Peran,
       foto: adminData.Foto_Admin,
       stasiun_id: adminData.ID_Stasiun,
+      stasiun:
+        adminData.Stasiun && adminData.Stasiun.length > 0
+          ? adminData.Stasiun[0].Nama_Stasiun
+          : null,
     };
 
     //*** Langkah 5: Kembalikan response ***

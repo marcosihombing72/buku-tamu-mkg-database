@@ -29,6 +29,7 @@ export declare class AdminController {
             peran: any;
             foto: any;
             stasiun_id: any;
+            stasiun: any;
         };
     }>;
     updateProfileAdmin(dto: UpdateProfileAdminDto, foto?: Express.Multer.File): Promise<{

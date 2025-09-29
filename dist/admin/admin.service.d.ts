@@ -30,6 +30,7 @@ export declare class AdminService {
             peran: any;
             foto: any;
             stasiun_id: any;
+            stasiun: any;
         };
     }>;
     private deleteOldPhoto;

@@ -21,6 +21,9 @@ async function bootstrap() {
     }),
   );
 
+  // jadi /api
+  app.setGlobalPrefix('api');
+
   app.enableCors({
     origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',

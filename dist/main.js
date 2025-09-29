@@ -19,6 +19,7 @@ async function bootstrap() {
         windowMs: 60 * 1000,
         max: 100,
     }));
+    app.setGlobalPrefix('api');
     app.enableCors({
         origin: true,
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',

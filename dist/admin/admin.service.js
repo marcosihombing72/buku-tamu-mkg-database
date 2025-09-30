@@ -281,24 +281,34 @@ let AdminService = class AdminService {
     }
     async getBukuTamu(access_token, user_id, period, startDate, endDate, filterStasiunId) {
         const supabase = this.supabaseService.getClient();
-        const { data: userData, error: userError } = await supabase.auth.getUser(access_token);
-        if (userError || !userData?.user) {
-            throw new common_1.UnauthorizedException('Token tidak valid atau sudah kedaluwarsa');
-        }
-        if (userData.user.id !== user_id) {
-            throw new common_1.UnauthorizedException('Token tidak sesuai dengan user_id');
+        const { data: { user }, error, } = await supabase.auth.getUser(access_token);
+        if (error || !user?.id || user.id !== user_id) {
+            console.error('Invalid token or mismatch:', {
+                error,
+                tokenUserId: user?.id,
+                requestedUserId: user_id,
+            });
+            throw new common_1.UnauthorizedException('Invalid token or user mismatch');
         }
         const { data: adminData, error: adminError } = await supabase
             .from('Admin')
-            .select('ID_Admin, Peran, ID_Stasiun')
-            .eq('ID_Admin', user_id)
+            .select(`
+      ID_Admin, 
+      Peran, 
+      ID_Stasiun
+    `)
+            .eq('ID_Admin', user.id)
             .single();
-        if (adminError || !adminData) {
-            throw new common_1.BadRequestException(`Admin tidak ditemukan: ${adminError?.message}`);
+        if (adminError) {
+            console.error('Admin data fetch error:', adminError);
+            throw new common_1.BadRequestException('Failed to fetch admin data');
+        }
+        if (!adminData) {
+            throw new common_1.NotFoundException('Admin not found');
         }
         const isSuperadmin = adminData.Peran === 'Superadmin';
         if (!isSuperadmin && filterStasiunId) {
-            throw new common_1.ForbiddenException('Anda tidak memiliki izin untuk memfilter berdasarkan ID Stasiun');
+            throw new common_1.ForbiddenException('Anda tidak boleh filter berdasarkan ID Stasiun');
         }
         let bukuTamuQuery = supabase
             .from('Buku_Tamu')
@@ -319,7 +329,7 @@ let AdminService = class AdminService {
             .order('Waktu_Kunjungan', { ascending: false });
         if (!isSuperadmin) {
             if (!adminData.ID_Stasiun) {
-                throw new common_1.BadRequestException('Admin tidak memiliki ID_Stasiun');
+                throw new common_1.BadRequestException('Admin tidak punya ID_Stasiun');
             }
             bukuTamuQuery = bukuTamuQuery.eq('ID_Stasiun', adminData.ID_Stasiun);
         }
@@ -345,7 +355,8 @@ let AdminService = class AdminService {
         }
         const { data: bukuTamuData, error: bukuTamuError } = await bukuTamuQuery;
         if (bukuTamuError) {
-            throw new common_1.BadRequestException(`Gagal ambil data Buku_Tamu: ${bukuTamuError.message}`);
+            console.error('Buku Tamu query error:', bukuTamuError);
+            throw new common_1.BadRequestException('Failed to fetch Buku Tamu');
         }
         const formattedData = bukuTamuData.map((item) => ({
             ...item,

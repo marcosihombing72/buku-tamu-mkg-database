@@ -44,7 +44,7 @@ let AdminController = class AdminController {
     async getDashboard(access_token, user_id) {
         return this.adminService.getDashboard(access_token, user_id);
     }
-    async getBukuTamuController(access_token, user_id, period, startDate, endDate, filterStasiunId) {
+    async getBukuTamu(access_token, user_id, period, startDate, endDate, filterStasiunId) {
         return this.adminService.getBukuTamu(access_token, user_id, period, startDate, endDate, filterStasiunId);
     }
     async getBukuTamuHariIni(access_token, user_id) {
@@ -119,6 +119,14 @@ __decorate([
     (0, common_1.Get)('buku-tamu'),
     (0, swagger_1.ApiHeader)({ name: 'access_token', required: true }),
     (0, swagger_1.ApiHeader)({ name: 'user_id', required: true }),
+    (0, swagger_1.ApiQuery)({
+        name: 'period',
+        required: false,
+        enum: ['today', 'week', 'month'],
+    }),
+    (0, swagger_1.ApiQuery)({ name: 'startDate', required: false }),
+    (0, swagger_1.ApiQuery)({ name: 'endDate', required: false }),
+    (0, swagger_1.ApiQuery)({ name: 'filterStasiunId', required: false }),
     __param(0, (0, common_1.Headers)('access_token')),
     __param(1, (0, common_1.Headers)('user_id')),
     __param(2, (0, common_1.Query)('period')),
@@ -128,7 +136,7 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String, String, String, String, String]),
     __metadata("design:returntype", Promise)
-], AdminController.prototype, "getBukuTamuController", null);
+], AdminController.prototype, "getBukuTamu", null);
 __decorate([
     (0, common_1.Get)('buku-tamu/hari-ini'),
     (0, swagger_1.ApiHeader)({

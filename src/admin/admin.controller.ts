@@ -10,7 +10,13 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBody, ApiConsumes, ApiHeader, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiHeader,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { AdminService } from '@/admin/admin.service';
 import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
@@ -85,7 +91,15 @@ export class AdminController {
   @Get('buku-tamu')
   @ApiHeader({ name: 'access_token', required: true })
   @ApiHeader({ name: 'user_id', required: true })
-  async getBukuTamuController(
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    enum: ['today', 'week', 'month'],
+  })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
+  @ApiQuery({ name: 'filterStasiunId', required: false })
+  async getBukuTamu(
     @Headers('access_token') access_token: string,
     @Headers('user_id') user_id: string,
     @Query('period') period?: 'today' | 'week' | 'month',

@@ -410,42 +410,53 @@ export class AdminService {
   ) {
     const supabase = this.supabaseService.getClient();
 
-    // 1. Verifikasi token
-    const { data: userData, error: userError } =
-      await supabase.auth.getUser(access_token);
-    if (userError || !userData?.user) {
-      throw new UnauthorizedException(
-        'Token tidak valid atau sudah kedaluwarsa',
-      );
+    // 1. Verify access_token
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(access_token);
+
+    if (error || !user?.id || user.id !== user_id) {
+      console.error('Invalid token or mismatch:', {
+        error,
+        tokenUserId: user?.id,
+        requestedUserId: user_id,
+      });
+      throw new UnauthorizedException('Invalid token or user mismatch');
     }
 
-    if (userData.user.id !== user_id) {
-      throw new UnauthorizedException('Token tidak sesuai dengan user_id');
-    }
-
-    // 2. Ambil data admin
+    // 2. Get admin data
     const { data: adminData, error: adminError } = await supabase
       .from('Admin')
-      .select('ID_Admin, Peran, ID_Stasiun')
-      .eq('ID_Admin', user_id)
+      .select(
+        `
+      ID_Admin, 
+      Peran, 
+      ID_Stasiun
+    `,
+      )
+      .eq('ID_Admin', user.id)
       .single();
 
-    if (adminError || !adminData) {
-      throw new BadRequestException(
-        `Admin tidak ditemukan: ${adminError?.message}`,
-      );
+    if (adminError) {
+      console.error('Admin data fetch error:', adminError);
+      throw new BadRequestException('Failed to fetch admin data');
+    }
+
+    if (!adminData) {
+      throw new NotFoundException('Admin not found');
     }
 
     const isSuperadmin = adminData.Peran === 'Superadmin';
 
-    // 3. Validasi filterStasiunId
+    // 3. Validate filter
     if (!isSuperadmin && filterStasiunId) {
       throw new ForbiddenException(
-        'Anda tidak memiliki izin untuk memfilter berdasarkan ID Stasiun',
+        'Anda tidak boleh filter berdasarkan ID Stasiun',
       );
     }
 
-    // 4. Query dasar
+    // 4. Base query Buku_Tamu
     let bukuTamuQuery = supabase
       .from('Buku_Tamu')
       .select(
@@ -466,17 +477,17 @@ export class AdminService {
       )
       .order('Waktu_Kunjungan', { ascending: false });
 
-    // 5. Filter admin biasa
+    // 5. Apply stasiun filter
     if (!isSuperadmin) {
       if (!adminData.ID_Stasiun) {
-        throw new BadRequestException('Admin tidak memiliki ID_Stasiun');
+        throw new BadRequestException('Admin tidak punya ID_Stasiun');
       }
       bukuTamuQuery = bukuTamuQuery.eq('ID_Stasiun', adminData.ID_Stasiun);
     } else if (filterStasiunId) {
       bukuTamuQuery = bukuTamuQuery.eq('ID_Stasiun', filterStasiunId);
     }
 
-    // 6. Filter tanggal
+    // 6. Date filter
     const today = dayjs().startOf('day');
     if (startDate && endDate) {
       bukuTamuQuery = bukuTamuQuery
@@ -498,12 +509,11 @@ export class AdminService {
       );
     }
 
-    // 7. Eksekusi query
+    // 7. Execute query
     const { data: bukuTamuData, error: bukuTamuError } = await bukuTamuQuery;
     if (bukuTamuError) {
-      throw new BadRequestException(
-        `Gagal ambil data Buku_Tamu: ${bukuTamuError.message}`,
-      );
+      console.error('Buku Tamu query error:', bukuTamuError);
+      throw new BadRequestException('Failed to fetch Buku Tamu');
     }
 
     // 8. Format hasil

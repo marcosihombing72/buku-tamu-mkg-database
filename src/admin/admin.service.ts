@@ -26,10 +26,9 @@ export class AdminService {
 
   //*** Fungsi login admin ***
   async loginAdmin(dto: LoginAdminDto) {
-    //*** Langkah 1: Dapatkan client Supabase ***
     const supabase = this.supabaseService.getClient();
 
-    //*** Langkah 2: Login ke Supabase Auth ***
+    // 1. Login ke Supabase Auth
     const { data: loginData, error: loginError } =
       await supabase.auth.signInWithPassword({
         email: dto.email,
@@ -45,23 +44,13 @@ export class AdminService {
     let session = loginData.session;
     const user = loginData.user;
 
-    //*** Langkah 3: Perpanjang masa berlaku token ***
-    try {
-      const { data: refreshedData, error: refreshError } =
-        await supabase.auth.refreshSession();
-      if (!refreshError && refreshedData?.session) {
-        session = refreshedData.session;
-      }
+    // 2. Pastikan session tersimpan agar bisa refresh otomatis
+    await supabase.auth.setSession({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    });
 
-      await supabase.auth.setSession({
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-      });
-    } catch (refreshErr) {
-      console.error('Gagal memperpanjang session:', refreshErr);
-    }
-
-    //*** Langkah 4: Ambil data admin dari tabel Admin ***
+    // 3. Ambil data admin
     const { data: adminData, error: adminError } = await supabase
       .from('Admin')
       .select(
@@ -76,7 +65,7 @@ export class AdminService {
       );
     }
 
-    //*** Langkah 5: Return response ***
+    // 4. Return response
     return {
       message: 'Login berhasil',
       access_token: session.access_token,
@@ -430,6 +419,10 @@ export class AdminService {
       );
     }
 
+    if (userData.user.id !== user_id) {
+      throw new UnauthorizedException('Token tidak sesuai dengan user_id');
+    }
+
     // 2. Ambil data admin
     const { data: adminData, error: adminError } = await supabase
       .from('Admin')
@@ -457,20 +450,19 @@ export class AdminService {
       .from('Buku_Tamu')
       .select(
         `
-        ID_Buku_Tamu,
-        ID_Stasiun,
-        Tujuan,
-        Tanggal_Pengisian,
-        Waktu_Kunjungan,
-        Tanda_Tangan,
-        Nama_Depan,
-        Nama_Belakang,
-        Email,
-        No_Telepon,
-        Asal,
-        Instansi,
-        Stasiun:ID_Stasiun(Nama_Stasiun)
-      `,
+      ID_Buku_Tamu,
+      ID_Stasiun,
+      Tujuan,
+      Waktu_Kunjungan,
+      Tanda_Tangan,
+      Nama_Depan,
+      Nama_Belakang,
+      Email,
+      No_Telepon,
+      Asal,
+      Instansi,
+      Stasiun:ID_Stasiun(Nama_Stasiun)
+    `,
       )
       .order('Waktu_Kunjungan', { ascending: false });
 
@@ -487,7 +479,6 @@ export class AdminService {
     // 6. Filter tanggal
     const today = dayjs().startOf('day');
     if (startDate && endDate) {
-      // custom range lebih prioritas
       bukuTamuQuery = bukuTamuQuery
         .gte('Waktu_Kunjungan', dayjs(startDate).toISOString())
         .lte('Waktu_Kunjungan', dayjs(endDate).toISOString());
@@ -575,7 +566,6 @@ export class AdminService {
       ID_Buku_Tamu,
       ID_Stasiun,
       Tujuan,
-      Tanggal_Pengisian,
       Waktu_Kunjungan,
       Tanda_Tangan,
       Nama_Depan,

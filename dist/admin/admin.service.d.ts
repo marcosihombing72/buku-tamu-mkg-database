@@ -56,7 +56,6 @@ export declare class AdminService {
             ID_Buku_Tamu: any;
             ID_Stasiun: any;
             Tujuan: any;
-            Tanggal_Pengisian: any;
             Tanda_Tangan: any;
             Nama_Depan: any;
             Nama_Belakang: any;

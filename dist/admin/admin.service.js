@@ -38,19 +38,10 @@ let AdminService = class AdminService {
         }
         let session = loginData.session;
         const user = loginData.user;
-        try {
-            const { data: refreshedData, error: refreshError } = await supabase.auth.refreshSession();
-            if (!refreshError && refreshedData?.session) {
-                session = refreshedData.session;
-            }
-            await supabase.auth.setSession({
-                access_token: session.access_token,
-                refresh_token: session.refresh_token,
-            });
-        }
-        catch (refreshErr) {
-            console.error('Gagal memperpanjang session:', refreshErr);
-        }
+        await supabase.auth.setSession({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+        });
         const { data: adminData, error: adminError } = await supabase
             .from('Admin')
             .select('ID_Admin, Peran, Nama_Depan_Admin, Nama_Belakang_Admin, Email_Admin')
@@ -294,6 +285,9 @@ let AdminService = class AdminService {
         if (userError || !userData?.user) {
             throw new common_1.UnauthorizedException('Token tidak valid atau sudah kedaluwarsa');
         }
+        if (userData.user.id !== user_id) {
+            throw new common_1.UnauthorizedException('Token tidak sesuai dengan user_id');
+        }
         const { data: adminData, error: adminError } = await supabase
             .from('Admin')
             .select('ID_Admin, Peran, ID_Stasiun')
@@ -309,20 +303,19 @@ let AdminService = class AdminService {
         let bukuTamuQuery = supabase
             .from('Buku_Tamu')
             .select(`
-        ID_Buku_Tamu,
-        ID_Stasiun,
-        Tujuan,
-        Tanggal_Pengisian,
-        Waktu_Kunjungan,
-        Tanda_Tangan,
-        Nama_Depan,
-        Nama_Belakang,
-        Email,
-        No_Telepon,
-        Asal,
-        Instansi,
-        Stasiun:ID_Stasiun(Nama_Stasiun)
-      `)
+      ID_Buku_Tamu,
+      ID_Stasiun,
+      Tujuan,
+      Waktu_Kunjungan,
+      Tanda_Tangan,
+      Nama_Depan,
+      Nama_Belakang,
+      Email,
+      No_Telepon,
+      Asal,
+      Instansi,
+      Stasiun:ID_Stasiun(Nama_Stasiun)
+    `)
             .order('Waktu_Kunjungan', { ascending: false });
         if (!isSuperadmin) {
             if (!adminData.ID_Stasiun) {
@@ -391,7 +384,6 @@ let AdminService = class AdminService {
       ID_Buku_Tamu,
       ID_Stasiun,
       Tujuan,
-      Tanggal_Pengisian,
       Waktu_Kunjungan,
       Tanda_Tangan,
       Nama_Depan,

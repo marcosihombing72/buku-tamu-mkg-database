@@ -117,6 +117,8 @@ __decorate([
 ], AdminController.prototype, "getDashboard", null);
 __decorate([
     (0, common_1.Get)('buku-tamu'),
+    (0, swagger_1.ApiHeader)({ name: 'access_token', required: true }),
+    (0, swagger_1.ApiHeader)({ name: 'user_id', required: true }),
     __param(0, (0, common_1.Headers)('access_token')),
     __param(1, (0, common_1.Headers)('user_id')),
     __param(2, (0, common_1.Query)('period')),

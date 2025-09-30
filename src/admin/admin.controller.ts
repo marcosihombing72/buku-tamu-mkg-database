@@ -83,6 +83,8 @@ export class AdminController {
   }
 
   @Get('buku-tamu')
+  @ApiHeader({ name: 'access_token', required: true })
+  @ApiHeader({ name: 'user_id', required: true })
   async getBukuTamuController(
     @Headers('access_token') access_token: string,
     @Headers('user_id') user_id: string,

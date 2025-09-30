@@ -44,7 +44,7 @@ let AdminController = class AdminController {
     async getDashboard(access_token, user_id) {
         return this.adminService.getDashboard(access_token, user_id);
     }
-    async getBukuTamu(access_token, user_id, period, startDate, endDate, filterStasiunId) {
+    async getBukuTamuController(access_token, user_id, period, startDate, endDate, filterStasiunId) {
         return this.adminService.getBukuTamu(access_token, user_id, period, startDate, endDate, filterStasiunId);
     }
     async getBukuTamuHariIni(access_token, user_id) {
@@ -117,19 +117,6 @@ __decorate([
 ], AdminController.prototype, "getDashboard", null);
 __decorate([
     (0, common_1.Get)('buku-tamu'),
-    (0, swagger_1.ApiQuery)({
-        name: 'period',
-        required: false,
-        enum: ['today', 'week', 'month'],
-        example: 'today',
-    }),
-    (0, swagger_1.ApiQuery)({ name: 'startDate', required: false, example: '2023-10-01' }),
-    (0, swagger_1.ApiQuery)({ name: 'endDate', required: false, example: '2023-10-31' }),
-    (0, swagger_1.ApiQuery)({
-        name: 'filterStasiunId',
-        required: false,
-        example: '5b2df30a-4204-470a-bfff-da645ed475d4',
-    }),
     __param(0, (0, common_1.Headers)('access_token')),
     __param(1, (0, common_1.Headers)('user_id')),
     __param(2, (0, common_1.Query)('period')),
@@ -139,19 +126,17 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String, String, String, String, String]),
     __metadata("design:returntype", Promise)
-], AdminController.prototype, "getBukuTamu", null);
+], AdminController.prototype, "getBukuTamuController", null);
 __decorate([
     (0, common_1.Get)('buku-tamu/hari-ini'),
     (0, swagger_1.ApiHeader)({
         name: 'access_token',
         description: 'your-access_token',
-        example: 'eyJhbOiJ..........',
         required: true,
     }),
     (0, swagger_1.ApiHeader)({
         name: 'user_id',
         description: 'ID user',
-        example: '69fe727f-17e3-4065-a16e-23efb26382cf',
         required: true,
     }),
     __param(0, (0, common_1.Headers)('access_token')),
@@ -165,13 +150,11 @@ __decorate([
     (0, swagger_1.ApiHeader)({
         name: 'access_token',
         description: 'your-access_token',
-        example: 'eyJhbOiJ..........',
         required: true,
     }),
     (0, swagger_1.ApiHeader)({
         name: 'user_id',
         description: 'ID user',
-        example: '69fe727f-17e3-4065-a16e-23efb26382cf',
         required: true,
     }),
     __param(0, (0, common_1.Headers)('access_token')),
@@ -185,13 +168,11 @@ __decorate([
     (0, swagger_1.ApiHeader)({
         name: 'access_token',
         description: 'your-access_token',
-        example: 'eyJhbOiJ..........',
         required: true,
     }),
     (0, swagger_1.ApiHeader)({
         name: 'user_id',
         description: 'ID user',
-        example: '69fe727f-17e3-4065-a16e-23efb26382cf',
         required: true,
     }),
     __param(0, (0, common_1.Headers)('access_token')),

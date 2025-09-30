@@ -37,7 +37,7 @@ export declare class AdminController {
         id_stasiun: any;
         jumlah_tamu: number;
     }>;
-    getBukuTamu(access_token: string, user_id: string, period?: 'today' | 'week' | 'month', startDate?: string, endDate?: string, filterStasiunId?: string): Promise<{
+    getBukuTamuController(access_token: string, user_id: string, period?: 'today' | 'week' | 'month', startDate?: string, endDate?: string, filterStasiunId?: string): Promise<{
         filter: {
             period: "today" | "week" | "month" | null;
             startDate: string | null;

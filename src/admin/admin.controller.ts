@@ -10,13 +10,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import {
-  ApiBody,
-  ApiConsumes,
-  ApiHeader,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiHeader, ApiTags } from '@nestjs/swagger';
 
 import { AdminService } from '@/admin/admin.service';
 import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
@@ -89,20 +83,7 @@ export class AdminController {
   }
 
   @Get('buku-tamu')
-  @ApiQuery({
-    name: 'period',
-    required: false,
-    enum: ['today', 'week', 'month'],
-    example: 'today',
-  })
-  @ApiQuery({ name: 'startDate', required: false, example: '2023-10-01' })
-  @ApiQuery({ name: 'endDate', required: false, example: '2023-10-31' })
-  @ApiQuery({
-    name: 'filterStasiunId',
-    required: false,
-    example: '5b2df30a-4204-470a-bfff-da645ed475d4',
-  })
-  async getBukuTamu(
+  async getBukuTamuController(
     @Headers('access_token') access_token: string,
     @Headers('user_id') user_id: string,
     @Query('period') period?: 'today' | 'week' | 'month',
@@ -124,13 +105,11 @@ export class AdminController {
   @ApiHeader({
     name: 'access_token',
     description: 'your-access_token',
-    example: 'eyJhbOiJ..........',
     required: true,
   })
   @ApiHeader({
     name: 'user_id',
     description: 'ID user',
-    example: '69fe727f-17e3-4065-a16e-23efb26382cf',
     required: true,
   })
   async getBukuTamuHariIni(
@@ -144,13 +123,11 @@ export class AdminController {
   @ApiHeader({
     name: 'access_token',
     description: 'your-access_token',
-    example: 'eyJhbOiJ..........',
     required: true,
   })
   @ApiHeader({
     name: 'user_id',
     description: 'ID user',
-    example: '69fe727f-17e3-4065-a16e-23efb26382cf',
     required: true,
   })
   async getBukuTamuMingguIni(
@@ -164,13 +141,11 @@ export class AdminController {
   @ApiHeader({
     name: 'access_token',
     description: 'your-access_token',
-    example: 'eyJhbOiJ..........',
     required: true,
   })
   @ApiHeader({
     name: 'user_id',
     description: 'ID user',
-    example: '69fe727f-17e3-4065-a16e-23efb26382cf',
     required: true,
   })
   async getBukuTamuBulanIni(

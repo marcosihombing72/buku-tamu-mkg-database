@@ -71,25 +71,7 @@ export declare class AdminService {
         }[];
     }>;
     private getBukuTamuByPeriod;
-    getBukuTamuHariIni(access_token: string, user_id: string): Promise<{
-        period: "today" | "week" | "month";
-        isSuperadmin: boolean;
-        stationFilter: any;
-        count: number;
-        data: any[];
-    }>;
-    getBukuTamuMingguIni(access_token: string, user_id: string): Promise<{
-        period: "today" | "week" | "month";
-        isSuperadmin: boolean;
-        stationFilter: any;
-        count: number;
-        data: any[];
-    }>;
-    getBukuTamuBulanIni(access_token: string, user_id: string): Promise<{
-        period: "today" | "week" | "month";
-        isSuperadmin: boolean;
-        stationFilter: any;
-        count: number;
-        data: any[];
-    }>;
+    getBukuTamuHariIni(access_token: string, user_id: string): Promise<any>;
+    getBukuTamuMingguIni(access_token: string, user_id: string): Promise<any>;
+    getBukuTamuBulanIni(access_token: string, user_id: string): Promise<any>;
 }

@@ -6,12 +6,11 @@ import {
   Post,
   Put,
   Query,
-  UnauthorizedException,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiConsumes, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { AdminService } from '@/admin/admin.service';
 import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
@@ -34,30 +33,43 @@ export class AdminController {
   }
 
   @Get('profile')
-  @ApiBearerAuth()
   async getProfile(
-    @Headers('authorization') auth: string,
+    @Headers('access_token') access_token: string,
     @Headers('user_id') user_id: string,
   ) {
-    if (!auth?.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Authorization header tidak valid');
-    }
-
-    const access_token = auth.replace('Bearer ', '');
     return this.adminService.getProfile(user_id, access_token);
   }
 
-  @Put('update-profile')
   @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: UpdateProfileAdminDto })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        nama_depan: { type: 'string' },
+        nama_belakang: { type: 'string' },
+        password: { type: 'string' },
+        foto: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @Put('update-profile')
   @UseInterceptors(FileInterceptor('foto'))
   async updateProfile(
+    @Body() dto: UpdateProfileAdminDto,
+    @UploadedFile() foto: Express.Multer.File,
     @Headers('access_token') access_token: string,
     @Headers('user_id') user_id: string,
-    @Body() dto: UpdateProfileAdminDto,
-    @UploadedFile() foto?: Express.Multer.File,
   ) {
     return this.adminService.updateProfile(
-      { ...dto, access_token, user_id },
+      {
+        ...dto,
+        access_token,
+        user_id,
+      },
       foto,
     );
   }

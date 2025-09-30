@@ -375,13 +375,13 @@ let AdminService = class AdminService {
     }
     async getBukuTamuByPeriod(access_token, user_id, period) {
         const supabase = this.supabaseService.getClient();
-        const { data: userData, error: userError } = await supabase.auth.getUser(access_token);
-        if (userError || !userData?.user) {
-            throw new common_1.UnauthorizedException('Token tidak valid atau sudah kedaluwarsa');
+        const { data: authData, error: authError } = await supabase.auth.getUser(access_token);
+        if (authError || !authData?.user || authData.user.id !== user_id) {
+            throw new common_1.UnauthorizedException('Token tidak valid atau tidak cocok dengan user_id');
         }
         const { data: adminData, error: adminError } = await supabase
             .from('Admin')
-            .select('*')
+            .select('Peran, ID_Stasiun')
             .eq('ID_Admin', user_id)
             .single();
         if (adminError || !adminData) {
@@ -389,16 +389,26 @@ let AdminService = class AdminService {
         }
         const isSuperadmin = adminData.Peran === 'Superadmin';
         let bukuTamuQuery = supabase.from('Buku_Tamu').select(`
-    *,
-    Stasiun:ID_Stasiun (
-      ID_Stasiun,
-      Nama_Stasiun
-    )
+    ID_Buku_Tamu,
+    ID_Stasiun,
+    Tujuan,
+    Tanggal_Pengisian,
+    Waktu_Kunjungan,
+    Tanda_Tangan,
+    Nama_Depan_Pengunjung,
+    Nama_Belakang_Pengunjung,
+    Email_Pengunjung,
+    No_Telepon_Pengunjung,
+    Asal_Pengunjung,
+    Asal_Instansi,
+    Stasiun:ID_Stasiun(Nama_Stasiun)
   `);
-        const today = new Date();
+        const now = new Date();
         if (period === 'today') {
-            const start = new Date(today.setHours(0, 0, 0, 0));
-            const end = new Date(today.setHours(23, 59, 59, 999));
+            const start = new Date();
+            start.setHours(0, 0, 0, 0);
+            const end = new Date();
+            end.setHours(23, 59, 59, 999);
             bukuTamuQuery = bukuTamuQuery
                 .gte('Waktu_Kunjungan', start.toISOString())
                 .lte('Waktu_Kunjungan', end.toISOString());
@@ -411,11 +421,14 @@ let AdminService = class AdminService {
                 .lte('Waktu_Kunjungan', end.toISOString());
         }
         else if (period === 'month') {
-            const start = new Date(today.getFullYear(), today.getMonth(), 1);
-            const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            const start = new Date(now.getFullYear(), now.getMonth(), 1);
+            const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
             bukuTamuQuery = bukuTamuQuery
                 .gte('Waktu_Kunjungan', start.toISOString())
                 .lte('Waktu_Kunjungan', end.toISOString());
+        }
+        else {
+            throw new common_1.BadRequestException('Periode filter tidak valid');
         }
         if (!isSuperadmin) {
             if (!adminData.ID_Stasiun) {
@@ -423,7 +436,9 @@ let AdminService = class AdminService {
             }
             bukuTamuQuery = bukuTamuQuery.eq('ID_Stasiun', adminData.ID_Stasiun);
         }
-        const { data, error } = await bukuTamuQuery;
+        const { data, error } = await bukuTamuQuery.order('Waktu_Kunjungan', {
+            ascending: false,
+        });
         if (error) {
             throw new common_1.BadRequestException(`Gagal mengambil data Buku Tamu: ${error.message}`);
         }

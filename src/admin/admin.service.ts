@@ -547,23 +547,23 @@ export class AdminService {
     access_token: string,
     user_id: string,
     period: 'today' | 'week' | 'month',
-  ) {
-    //*** Langkah 1: Dapatkan client Supabase ***
+  ): Promise<any> {
     const supabase = this.supabaseService.getClient();
 
-    // *** Langkah 2: Verifikasi token Supabase ***
-    const { data: userData, error: userError } =
+    // 1. Verifikasi Supabase token dan cocokkan dengan user_id
+    const { data: authData, error: authError } =
       await supabase.auth.getUser(access_token);
-    if (userError || !userData?.user) {
+
+    if (authError || !authData?.user || authData.user.id !== user_id) {
       throw new UnauthorizedException(
-        'Token tidak valid atau sudah kedaluwarsa',
+        'Token tidak valid atau tidak cocok dengan user_id',
       );
     }
 
-    //*** Langkah 3: Ambil data admin dari tabel Admin ***
+    // 2. Ambil data admin
     const { data: adminData, error: adminError } = await supabase
       .from('Admin')
-      .select('*')
+      .select('Peran, ID_Stasiun')
       .eq('ID_Admin', user_id)
       .single();
 
@@ -573,20 +573,32 @@ export class AdminService {
 
     const isSuperadmin = adminData.Peran === 'Superadmin';
 
-    // Buat query dasar
-    let bukuTamuQuery = supabase.from('Buku_Tamu').select(`
-    *,
-    Stasiun:ID_Stasiun (
-      ID_Stasiun,
-      Nama_Stasiun
-    )
-  `);
+    // 3. Query dasar Buku_Tamu
+    let bukuTamuQuery = supabase.from('Buku_Tamu').select(
+      `
+    ID_Buku_Tamu,
+    ID_Stasiun,
+    Tujuan,
+    Tanggal_Pengisian,
+    Waktu_Kunjungan,
+    Tanda_Tangan,
+    Nama_Depan_Pengunjung,
+    Nama_Belakang_Pengunjung,
+    Email_Pengunjung,
+    No_Telepon_Pengunjung,
+    Asal_Pengunjung,
+    Asal_Instansi,
+    Stasiun:ID_Stasiun(Nama_Stasiun)
+  `,
+    );
 
-    //***  Langkah 4: Tambahkan Filter berdasarkan period (menggunakan kolom Waktu_Kunjungan) ***
-    const today = new Date();
+    // 4. Filter periode (pakai Waktu_Kunjungan dengan rentang presisi)
+    const now = new Date();
     if (period === 'today') {
-      const start = new Date(today.setHours(0, 0, 0, 0));
-      const end = new Date(today.setHours(23, 59, 59, 999));
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      const end = new Date();
+      end.setHours(23, 59, 59, 999);
       bukuTamuQuery = bukuTamuQuery
         .gte('Waktu_Kunjungan', start.toISOString())
         .lte('Waktu_Kunjungan', end.toISOString());
@@ -597,14 +609,23 @@ export class AdminService {
         .gte('Waktu_Kunjungan', start.toISOString())
         .lte('Waktu_Kunjungan', end.toISOString());
     } else if (period === 'month') {
-      const start = new Date(today.getFullYear(), today.getMonth(), 1);
-      const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+      );
       bukuTamuQuery = bukuTamuQuery
         .gte('Waktu_Kunjungan', start.toISOString())
         .lte('Waktu_Kunjungan', end.toISOString());
+    } else {
+      throw new BadRequestException('Periode filter tidak valid');
     }
 
-    // Filter kalau admin biasa
+    // 5. Filter admin biasa berdasarkan stasiun
     if (!isSuperadmin) {
       if (!adminData.ID_Stasiun) {
         throw new BadRequestException('Admin tidak memiliki ID_Stasiun');
@@ -612,7 +633,10 @@ export class AdminService {
       bukuTamuQuery = bukuTamuQuery.eq('ID_Stasiun', adminData.ID_Stasiun);
     }
 
-    const { data, error } = await bukuTamuQuery;
+    // 6. Eksekusi query
+    const { data, error } = await bukuTamuQuery.order('Waktu_Kunjungan', {
+      ascending: false,
+    });
 
     if (error) {
       throw new BadRequestException(
@@ -620,7 +644,7 @@ export class AdminService {
       );
     }
 
-    //*** Langkah 5: Format hasil dan kembalikan response ***
+    // 7. Format hasil
     const formattedData =
       data?.map((item) => ({
         ...item,
@@ -629,7 +653,7 @@ export class AdminService {
         ),
       })) || [];
 
-    //*** Langkah 6: Kembalikan response ***
+    // 8. Return response
     return {
       period,
       isSuperadmin,

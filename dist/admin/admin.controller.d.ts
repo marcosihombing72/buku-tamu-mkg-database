@@ -19,7 +19,7 @@ export declare class AdminController {
         message: string;
         email: string;
     }>;
-    getProfile(auth: string, user_id: string): Promise<{
+    getProfile(access_token: string, user_id: string): Promise<{
         message: string;
         data: {
             user_id: any;
@@ -31,7 +31,7 @@ export declare class AdminController {
             stasiun_id: any;
         };
     }>;
-    updateProfile(access_token: string, user_id: string, dto: UpdateProfileAdminDto, foto?: Express.Multer.File): Promise<any>;
+    updateProfile(dto: UpdateProfileAdminDto, foto: Express.Multer.File, access_token: string, user_id: string): Promise<any>;
     getDashboard(access_token: string, user_id: string): Promise<{
         peran: any;
         id_stasiun: any;
@@ -65,25 +65,7 @@ export declare class AdminController {
             }[];
         }[];
     }>;
-    getBukuTamuHariIni(access_token: string, user_id: string): Promise<{
-        period: "today" | "week" | "month";
-        isSuperadmin: boolean;
-        stationFilter: any;
-        count: number;
-        data: any[];
-    }>;
-    getBukuTamuMingguIni(access_token: string, user_id: string): Promise<{
-        period: "today" | "week" | "month";
-        isSuperadmin: boolean;
-        stationFilter: any;
-        count: number;
-        data: any[];
-    }>;
-    getBukuTamuBulanIni(access_token: string, user_id: string): Promise<{
-        period: "today" | "week" | "month";
-        isSuperadmin: boolean;
-        stationFilter: any;
-        count: number;
-        data: any[];
-    }>;
+    getBukuTamuHariIni(access_token: string, user_id: string): Promise<any>;
+    getBukuTamuMingguIni(access_token: string, user_id: string): Promise<any>;
+    getBukuTamuBulanIni(access_token: string, user_id: string): Promise<any>;
 }

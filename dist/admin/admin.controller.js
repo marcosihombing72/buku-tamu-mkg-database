@@ -31,15 +31,15 @@ let AdminController = class AdminController {
     async resetPasswordAdmin(dto) {
         return this.adminService.resetPasswordAdmin(dto);
     }
-    async getProfile(auth, user_id) {
-        if (!auth?.startsWith('Bearer ')) {
-            throw new common_1.UnauthorizedException('Authorization header tidak valid');
-        }
-        const access_token = auth.replace('Bearer ', '');
+    async getProfile(access_token, user_id) {
         return this.adminService.getProfile(user_id, access_token);
     }
-    async updateProfile(access_token, user_id, dto, foto) {
-        return this.adminService.updateProfile({ ...dto, access_token, user_id }, foto);
+    async updateProfile(dto, foto, access_token, user_id) {
+        return this.adminService.updateProfile({
+            ...dto,
+            access_token,
+            user_id,
+        }, foto);
     }
     async getDashboard(access_token, user_id) {
         return this.adminService.getDashboard(access_token, user_id);
@@ -74,23 +74,37 @@ __decorate([
 ], AdminController.prototype, "resetPasswordAdmin", null);
 __decorate([
     (0, common_1.Get)('profile'),
-    (0, swagger_1.ApiBearerAuth)(),
-    __param(0, (0, common_1.Headers)('authorization')),
+    __param(0, (0, common_1.Headers)('access_token')),
     __param(1, (0, common_1.Headers)('user_id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getProfile", null);
 __decorate([
-    (0, common_1.Put)('update-profile'),
     (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, swagger_1.ApiBody)({ type: update_profile_admin_dto_1.UpdateProfileAdminDto }),
+    (0, swagger_1.ApiBody)({
+        schema: {
+            type: 'object',
+            properties: {
+                nama_depan: { type: 'string' },
+                nama_belakang: { type: 'string' },
+                password: { type: 'string' },
+                foto: {
+                    type: 'string',
+                    format: 'binary',
+                },
+            },
+        },
+    }),
+    (0, common_1.Put)('update-profile'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('foto')),
-    __param(0, (0, common_1.Headers)('access_token')),
-    __param(1, (0, common_1.Headers)('user_id')),
-    __param(2, (0, common_1.Body)()),
-    __param(3, (0, common_1.UploadedFile)()),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.UploadedFile)()),
+    __param(2, (0, common_1.Headers)('access_token')),
+    __param(3, (0, common_1.Headers)('user_id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, update_profile_admin_dto_1.UpdateProfileAdminDto, Object]),
+    __metadata("design:paramtypes", [update_profile_admin_dto_1.UpdateProfileAdminDto, Object, String, String]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "updateProfile", null);
 __decorate([

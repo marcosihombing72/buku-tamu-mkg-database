@@ -309,22 +309,21 @@ let AdminService = class AdminService {
         let bukuTamuQuery = supabase
             .from('Buku_Tamu')
             .select(`
-      ID_Buku_Tamu,
-      ID_Pengunjung,
-      ID_Stasiun,
-      Tujuan,
-      Tanggal_Pengisian,
-      Waktu_Kunjungan,
-      Tanda_Tangan,
-      Nama_Depan_Pengunjung,
-      Nama_Belakang_Pengunjung,
-      Email_Pengunjung,
-      No_Telepon_Pengunjung,
-      Asal_Pengunjung,
-      Asal_Instansi,
-      Stasiun:ID_Stasiun(Nama_Stasiun)
-    `)
-            .order('Waktu_Pengisian', { ascending: false });
+        ID_Buku_Tamu,
+        ID_Stasiun,
+        Tujuan,
+        Tanggal_Pengisian,
+        Waktu_Kunjungan,
+        Tanda_Tangan,
+        Nama_Depan,
+        Nama_Belakang,
+        Email,
+        No_Telepon,
+        Asal,
+        Instansi,
+        Stasiun:ID_Stasiun(Nama_Stasiun)
+      `)
+            .order('Waktu_Kunjungan', { ascending: false });
         if (!isSuperadmin) {
             if (!adminData.ID_Stasiun) {
                 throw new common_1.BadRequestException('Admin tidak memiliki ID_Stasiun');
@@ -335,7 +334,12 @@ let AdminService = class AdminService {
             bukuTamuQuery = bukuTamuQuery.eq('ID_Stasiun', filterStasiunId);
         }
         const today = (0, dayjs_1.default)().startOf('day');
-        if (period === 'today') {
+        if (startDate && endDate) {
+            bukuTamuQuery = bukuTamuQuery
+                .gte('Waktu_Kunjungan', (0, dayjs_1.default)(startDate).toISOString())
+                .lte('Waktu_Kunjungan', (0, dayjs_1.default)(endDate).toISOString());
+        }
+        else if (period === 'today') {
             bukuTamuQuery = bukuTamuQuery.gte('Waktu_Kunjungan', today.toISOString());
         }
         else if (period === 'week') {
@@ -345,11 +349,6 @@ let AdminService = class AdminService {
         else if (period === 'month') {
             const startOfMonth = today.startOf('month');
             bukuTamuQuery = bukuTamuQuery.gte('Waktu_Kunjungan', startOfMonth.toISOString());
-        }
-        if (startDate && endDate) {
-            bukuTamuQuery = bukuTamuQuery
-                .gte('Waktu_Kunjungan', (0, dayjs_1.default)(startDate).toISOString())
-                .lte('Waktu_Kunjungan', (0, dayjs_1.default)(endDate).toISOString());
         }
         const { data: bukuTamuData, error: bukuTamuError } = await bukuTamuQuery;
         if (bukuTamuError) {
@@ -389,20 +388,20 @@ let AdminService = class AdminService {
         }
         const isSuperadmin = adminData.Peran === 'Superadmin';
         let bukuTamuQuery = supabase.from('Buku_Tamu').select(`
-    ID_Buku_Tamu,
-    ID_Stasiun,
-    Tujuan,
-    Tanggal_Pengisian,
-    Waktu_Kunjungan,
-    Tanda_Tangan,
-    Nama_Depan_Pengunjung,
-    Nama_Belakang_Pengunjung,
-    Email_Pengunjung,
-    No_Telepon_Pengunjung,
-    Asal_Pengunjung,
-    Asal_Instansi,
-    Stasiun:ID_Stasiun(Nama_Stasiun)
-  `);
+      ID_Buku_Tamu,
+      ID_Stasiun,
+      Tujuan,
+      Tanggal_Pengisian,
+      Waktu_Kunjungan,
+      Tanda_Tangan,
+      Nama_Depan,
+      Nama_Belakang,
+      Email,
+      No_Telepon,
+      Asal,
+      Instansi,
+      Stasiun:ID_Stasiun(Nama_Stasiun)
+    `);
         const now = new Date();
         if (period === 'today') {
             const start = new Date();

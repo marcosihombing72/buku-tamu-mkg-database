@@ -419,10 +419,9 @@ export class AdminService {
     endDate?: string,
     filterStasiunId?: string,
   ) {
-    //*** Langkah 1: Dapatkan client Supabase ***
     const supabase = this.supabaseService.getClient();
 
-    //*** Langkah 2: Verifikasi token ***
+    // 1. Verifikasi token
     const { data: userData, error: userError } =
       await supabase.auth.getUser(access_token);
     if (userError || !userData?.user) {
@@ -431,7 +430,7 @@ export class AdminService {
       );
     }
 
-    //*** Langkah 3: Ambil data admin ***
+    // 2. Ambil data admin
     const { data: adminData, error: adminError } = await supabase
       .from('Admin')
       .select('ID_Admin, Peran, ID_Stasiun')
@@ -446,36 +445,36 @@ export class AdminService {
 
     const isSuperadmin = adminData.Peran === 'Superadmin';
 
-    //*** Langkah 4: Validasi filterStasiunId ***
+    // 3. Validasi filterStasiunId
     if (!isSuperadmin && filterStasiunId) {
       throw new ForbiddenException(
         'Anda tidak memiliki izin untuk memfilter berdasarkan ID Stasiun',
       );
     }
 
-    //*** Langkah 5: Build query dengan relasi Stasiun ***
+    // 4. Query dasar
     let bukuTamuQuery = supabase
       .from('Buku_Tamu')
       .select(
         `
-      ID_Buku_Tamu,
-      ID_Pengunjung,
-      ID_Stasiun,
-      Tujuan,
-      Tanggal_Pengisian,
-      Waktu_Kunjungan,
-      Tanda_Tangan,
-      Nama_Depan_Pengunjung,
-      Nama_Belakang_Pengunjung,
-      Email_Pengunjung,
-      No_Telepon_Pengunjung,
-      Asal_Pengunjung,
-      Asal_Instansi,
-      Stasiun:ID_Stasiun(Nama_Stasiun)
-    `,
+        ID_Buku_Tamu,
+        ID_Stasiun,
+        Tujuan,
+        Tanggal_Pengisian,
+        Waktu_Kunjungan,
+        Tanda_Tangan,
+        Nama_Depan,
+        Nama_Belakang,
+        Email,
+        No_Telepon,
+        Asal,
+        Instansi,
+        Stasiun:ID_Stasiun(Nama_Stasiun)
+      `,
       )
-      .order('Waktu_Pengisian', { ascending: false });
+      .order('Waktu_Kunjungan', { ascending: false });
 
+    // 5. Filter admin biasa
     if (!isSuperadmin) {
       if (!adminData.ID_Stasiun) {
         throw new BadRequestException('Admin tidak memiliki ID_Stasiun');
@@ -485,9 +484,14 @@ export class AdminService {
       bukuTamuQuery = bukuTamuQuery.eq('ID_Stasiun', filterStasiunId);
     }
 
-    //*** Langkah 6: Filter berdasarkan period ***
+    // 6. Filter tanggal
     const today = dayjs().startOf('day');
-    if (period === 'today') {
+    if (startDate && endDate) {
+      // custom range lebih prioritas
+      bukuTamuQuery = bukuTamuQuery
+        .gte('Waktu_Kunjungan', dayjs(startDate).toISOString())
+        .lte('Waktu_Kunjungan', dayjs(endDate).toISOString());
+    } else if (period === 'today') {
       bukuTamuQuery = bukuTamuQuery.gte('Waktu_Kunjungan', today.toISOString());
     } else if (period === 'week') {
       const startOfWeek = today.startOf('week');
@@ -503,14 +507,7 @@ export class AdminService {
       );
     }
 
-    //*** Langkah 7: Filter berdasarkan custom date range ***
-    if (startDate && endDate) {
-      bukuTamuQuery = bukuTamuQuery
-        .gte('Waktu_Kunjungan', dayjs(startDate).toISOString())
-        .lte('Waktu_Kunjungan', dayjs(endDate).toISOString());
-    }
-
-    //*** Langkah 8: Eksekusi query ***
+    // 7. Eksekusi query
     const { data: bukuTamuData, error: bukuTamuError } = await bukuTamuQuery;
     if (bukuTamuError) {
       throw new BadRequestException(
@@ -518,7 +515,7 @@ export class AdminService {
       );
     }
 
-    //*** Langkah 9: Format hasil ***
+    // 8. Format hasil
     const formattedData = bukuTamuData.map((item) => ({
       ...item,
       Waktu_Kunjungan: dayjs(item.Waktu_Kunjungan).format(
@@ -526,7 +523,6 @@ export class AdminService {
       ),
     }));
 
-    //*** Langkah 10: Kembalikan response lengkap ***
     return {
       filter: {
         period: period || null,
@@ -550,7 +546,7 @@ export class AdminService {
   ): Promise<any> {
     const supabase = this.supabaseService.getClient();
 
-    // 1. Verifikasi Supabase token dan cocokkan dengan user_id
+    // 1. Verifikasi Supabase token
     const { data: authData, error: authError } =
       await supabase.auth.getUser(access_token);
 
@@ -573,26 +569,26 @@ export class AdminService {
 
     const isSuperadmin = adminData.Peran === 'Superadmin';
 
-    // 3. Query dasar Buku_Tamu
+    // 3. Query dasar Buku_Tamu (update field sesuai tabel terbaru)
     let bukuTamuQuery = supabase.from('Buku_Tamu').select(
       `
-    ID_Buku_Tamu,
-    ID_Stasiun,
-    Tujuan,
-    Tanggal_Pengisian,
-    Waktu_Kunjungan,
-    Tanda_Tangan,
-    Nama_Depan_Pengunjung,
-    Nama_Belakang_Pengunjung,
-    Email_Pengunjung,
-    No_Telepon_Pengunjung,
-    Asal_Pengunjung,
-    Asal_Instansi,
-    Stasiun:ID_Stasiun(Nama_Stasiun)
-  `,
+      ID_Buku_Tamu,
+      ID_Stasiun,
+      Tujuan,
+      Tanggal_Pengisian,
+      Waktu_Kunjungan,
+      Tanda_Tangan,
+      Nama_Depan,
+      Nama_Belakang,
+      Email,
+      No_Telepon,
+      Asal,
+      Instansi,
+      Stasiun:ID_Stasiun(Nama_Stasiun)
+    `,
     );
 
-    // 4. Filter periode (pakai Waktu_Kunjungan dengan rentang presisi)
+    // 4. Filter periode
     const now = new Date();
     if (period === 'today') {
       const start = new Date();
@@ -653,7 +649,6 @@ export class AdminService {
         ),
       })) || [];
 
-    // 8. Return response
     return {
       period,
       isSuperadmin,

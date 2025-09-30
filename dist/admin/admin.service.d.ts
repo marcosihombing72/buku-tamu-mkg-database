@@ -54,17 +54,16 @@ export declare class AdminService {
         data: {
             Waktu_Kunjungan: string;
             ID_Buku_Tamu: any;
-            ID_Pengunjung: any;
             ID_Stasiun: any;
             Tujuan: any;
             Tanggal_Pengisian: any;
             Tanda_Tangan: any;
-            Nama_Depan_Pengunjung: any;
-            Nama_Belakang_Pengunjung: any;
-            Email_Pengunjung: any;
-            No_Telepon_Pengunjung: any;
-            Asal_Pengunjung: any;
-            Asal_Instansi: any;
+            Nama_Depan: any;
+            Nama_Belakang: any;
+            Email: any;
+            No_Telepon: any;
+            Asal: any;
+            Instansi: any;
             Stasiun: {
                 Nama_Stasiun: any;
             }[];

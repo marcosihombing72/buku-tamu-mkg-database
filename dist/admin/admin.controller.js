@@ -142,6 +142,18 @@ __decorate([
 ], AdminController.prototype, "getBukuTamu", null);
 __decorate([
     (0, common_1.Get)('buku-tamu/hari-ini'),
+    (0, swagger_1.ApiHeader)({
+        name: 'access_token',
+        description: 'your-access_token',
+        example: 'eyJhbOiJ..........',
+        required: true,
+    }),
+    (0, swagger_1.ApiHeader)({
+        name: 'user_id',
+        description: 'ID user',
+        example: '69fe727f-17e3-4065-a16e-23efb26382cf',
+        required: true,
+    }),
     __param(0, (0, common_1.Headers)('access_token')),
     __param(1, (0, common_1.Headers)('user_id')),
     __metadata("design:type", Function),
@@ -150,6 +162,18 @@ __decorate([
 ], AdminController.prototype, "getBukuTamuHariIni", null);
 __decorate([
     (0, common_1.Get)('buku-tamu/minggu-ini'),
+    (0, swagger_1.ApiHeader)({
+        name: 'access_token',
+        description: 'your-access_token',
+        example: 'eyJhbOiJ..........',
+        required: true,
+    }),
+    (0, swagger_1.ApiHeader)({
+        name: 'user_id',
+        description: 'ID user',
+        example: '69fe727f-17e3-4065-a16e-23efb26382cf',
+        required: true,
+    }),
     __param(0, (0, common_1.Headers)('access_token')),
     __param(1, (0, common_1.Headers)('user_id')),
     __metadata("design:type", Function),
@@ -158,6 +182,18 @@ __decorate([
 ], AdminController.prototype, "getBukuTamuMingguIni", null);
 __decorate([
     (0, common_1.Get)('buku-tamu/bulan-ini'),
+    (0, swagger_1.ApiHeader)({
+        name: 'access_token',
+        description: 'your-access_token',
+        example: 'eyJhbOiJ..........',
+        required: true,
+    }),
+    (0, swagger_1.ApiHeader)({
+        name: 'user_id',
+        description: 'ID user',
+        example: '69fe727f-17e3-4065-a16e-23efb26382cf',
+        required: true,
+    }),
     __param(0, (0, common_1.Headers)('access_token')),
     __param(1, (0, common_1.Headers)('user_id')),
     __metadata("design:type", Function),

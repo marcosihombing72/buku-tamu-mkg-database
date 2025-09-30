@@ -10,7 +10,13 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBody, ApiConsumes, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiHeader,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { AdminService } from '@/admin/admin.service';
 import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
@@ -115,6 +121,18 @@ export class AdminController {
   }
 
   @Get('buku-tamu/hari-ini')
+  @ApiHeader({
+    name: 'access_token',
+    description: 'your-access_token',
+    example: 'eyJhbOiJ..........',
+    required: true,
+  })
+  @ApiHeader({
+    name: 'user_id',
+    description: 'ID user',
+    example: '69fe727f-17e3-4065-a16e-23efb26382cf',
+    required: true,
+  })
   async getBukuTamuHariIni(
     @Headers('access_token') access_token: string,
     @Headers('user_id') user_id: string,
@@ -123,6 +141,18 @@ export class AdminController {
   }
 
   @Get('buku-tamu/minggu-ini')
+  @ApiHeader({
+    name: 'access_token',
+    description: 'your-access_token',
+    example: 'eyJhbOiJ..........',
+    required: true,
+  })
+  @ApiHeader({
+    name: 'user_id',
+    description: 'ID user',
+    example: '69fe727f-17e3-4065-a16e-23efb26382cf',
+    required: true,
+  })
   async getBukuTamuMingguIni(
     @Headers('access_token') access_token: string,
     @Headers('user_id') user_id: string,
@@ -131,6 +161,18 @@ export class AdminController {
   }
 
   @Get('buku-tamu/bulan-ini')
+  @ApiHeader({
+    name: 'access_token',
+    description: 'your-access_token',
+    example: 'eyJhbOiJ..........',
+    required: true,
+  })
+  @ApiHeader({
+    name: 'user_id',
+    description: 'ID user',
+    example: '69fe727f-17e3-4065-a16e-23efb26382cf',
+    required: true,
+  })
   async getBukuTamuBulanIni(
     @Headers('access_token') access_token: string,
     @Headers('user_id') user_id: string,

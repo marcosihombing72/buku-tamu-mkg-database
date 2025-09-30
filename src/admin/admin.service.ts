@@ -489,25 +489,27 @@ export class AdminService {
     }
 
     // 6. Date filter
-    const today = dayjs().startOf('day');
+    const now = dayjs();
     if (startDate && endDate) {
       bukuTamuQuery = bukuTamuQuery
-        .gte('Waktu_Kunjungan', dayjs(startDate).toISOString())
-        .lte('Waktu_Kunjungan', dayjs(endDate).toISOString());
+        .gte('Waktu_Kunjungan', dayjs(startDate).startOf('day').toISOString())
+        .lte('Waktu_Kunjungan', dayjs(endDate).endOf('day').toISOString());
     } else if (period === 'today') {
-      bukuTamuQuery = bukuTamuQuery.gte('Waktu_Kunjungan', today.toISOString());
+      bukuTamuQuery = bukuTamuQuery
+        .gte('Waktu_Kunjungan', now.startOf('day').toISOString())
+        .lte('Waktu_Kunjungan', now.endOf('day').toISOString());
     } else if (period === 'week') {
-      const startOfWeek = today.startOf('week');
-      bukuTamuQuery = bukuTamuQuery.gte(
-        'Waktu_Kunjungan',
-        startOfWeek.toISOString(),
-      );
+      const startOfWeek = now.startOf('week');
+      const endOfWeek = now.endOf('week');
+      bukuTamuQuery = bukuTamuQuery
+        .gte('Waktu_Kunjungan', startOfWeek.toISOString())
+        .lte('Waktu_Kunjungan', endOfWeek.toISOString());
     } else if (period === 'month') {
-      const startOfMonth = today.startOf('month');
-      bukuTamuQuery = bukuTamuQuery.gte(
-        'Waktu_Kunjungan',
-        startOfMonth.toISOString(),
-      );
+      const startOfMonth = now.startOf('month');
+      const endOfMonth = now.endOf('month');
+      bukuTamuQuery = bukuTamuQuery
+        .gte('Waktu_Kunjungan', startOfMonth.toISOString())
+        .lte('Waktu_Kunjungan', endOfMonth.toISOString());
     }
 
     // 7. Execute query
@@ -550,14 +552,14 @@ export class AdminService {
   }
 
   //*** Fungsi helper untuk mendapatkan data Buku Tamu berdasarkan periode tertentu (hari ini, minggu ini, bulan ini) ***
-  private async getBukuTamuByPeriod(
+  async getBukuTamuByPeriod(
     access_token: string,
     user_id: string,
     period: 'today' | 'week' | 'month',
   ): Promise<any> {
     const supabase = this.supabaseService.getClient();
 
-    // 1. Verifikasi Supabase token
+    // 1. Verifikasi token
     const { data: authData, error: authError } =
       await supabase.auth.getUser(access_token);
 
@@ -575,63 +577,34 @@ export class AdminService {
       .single();
 
     if (adminError || !adminData) {
-      throw new NotFoundException('Data admin tidak ditemukan');
+      throw new BadRequestException('Data admin tidak ditemukan');
     }
 
     const isSuperadmin = adminData.Peran === 'Superadmin';
 
-    // 3. Query dasar Buku_Tamu (update field sesuai tabel terbaru)
-    let bukuTamuQuery = supabase.from('Buku_Tamu').select(
-      `
+    // 3. Base query Buku_Tamu (pakai struktur terbaru)
+    let bukuTamuQuery = supabase
+      .from('Buku_Tamu')
+      .select(
+        `
       ID_Buku_Tamu,
       ID_Stasiun,
       Tujuan,
       Waktu_Kunjungan,
       Tanda_Tangan,
-      Nama_Depan,
-      Nama_Belakang,
-      Email,
-      No_Telepon,
-      Asal,
-      Instansi,
+      Nama_Depan_Pengunjung,
+      Nama_Belakang_Pengunjung,
+      Email_Pengunjung,
+      No_Telepon_Pengunjung,
+      Asal_Pengunjung,
+      Asal_Instansi,
+      Alamat_Lengkap,
       Stasiun:ID_Stasiun(Nama_Stasiun)
     `,
-    );
+      )
+      .order('Waktu_Kunjungan', { ascending: false });
 
-    // 4. Filter periode
-    const now = new Date();
-    if (period === 'today') {
-      const start = new Date();
-      start.setHours(0, 0, 0, 0);
-      const end = new Date();
-      end.setHours(23, 59, 59, 999);
-      bukuTamuQuery = bukuTamuQuery
-        .gte('Waktu_Kunjungan', start.toISOString())
-        .lte('Waktu_Kunjungan', end.toISOString());
-    } else if (period === 'week') {
-      const start = dayjs().startOf('week').toDate();
-      const end = dayjs().endOf('week').toDate();
-      bukuTamuQuery = bukuTamuQuery
-        .gte('Waktu_Kunjungan', start.toISOString())
-        .lte('Waktu_Kunjungan', end.toISOString());
-    } else if (period === 'month') {
-      const start = new Date(now.getFullYear(), now.getMonth(), 1);
-      const end = new Date(
-        now.getFullYear(),
-        now.getMonth() + 1,
-        0,
-        23,
-        59,
-        59,
-      );
-      bukuTamuQuery = bukuTamuQuery
-        .gte('Waktu_Kunjungan', start.toISOString())
-        .lte('Waktu_Kunjungan', end.toISOString());
-    } else {
-      throw new BadRequestException('Periode filter tidak valid');
-    }
-
-    // 5. Filter admin biasa berdasarkan stasiun
+    // 4. Filter admin biasa (stasiun)
     if (!isSuperadmin) {
       if (!adminData.ID_Stasiun) {
         throw new BadRequestException('Admin tidak memiliki ID_Stasiun');
@@ -639,10 +612,26 @@ export class AdminService {
       bukuTamuQuery = bukuTamuQuery.eq('ID_Stasiun', adminData.ID_Stasiun);
     }
 
+    // 5. Filter periode
+    const now = dayjs();
+    if (period === 'today') {
+      bukuTamuQuery = bukuTamuQuery
+        .gte('Waktu_Kunjungan', now.startOf('day').toISOString())
+        .lte('Waktu_Kunjungan', now.endOf('day').toISOString());
+    } else if (period === 'week') {
+      bukuTamuQuery = bukuTamuQuery
+        .gte('Waktu_Kunjungan', now.startOf('week').toISOString())
+        .lte('Waktu_Kunjungan', now.endOf('week').toISOString());
+    } else if (period === 'month') {
+      bukuTamuQuery = bukuTamuQuery
+        .gte('Waktu_Kunjungan', now.startOf('month').toISOString())
+        .lte('Waktu_Kunjungan', now.endOf('month').toISOString());
+    } else {
+      throw new BadRequestException('Periode filter tidak valid');
+    }
+
     // 6. Eksekusi query
-    const { data, error } = await bukuTamuQuery.order('Waktu_Kunjungan', {
-      ascending: false,
-    });
+    const { data, error } = await bukuTamuQuery;
 
     if (error) {
       throw new BadRequestException(

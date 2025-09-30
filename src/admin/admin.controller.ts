@@ -129,9 +129,10 @@ export class AdminController {
     required: true,
   })
   async getBukuTamuHariIni(
-    @Headers('access_token') access_token: string,
+    @Headers('access_token') authorization: string,
     @Headers('user_id') user_id: string,
   ) {
+    const access_token = authorization?.replace('Bearer ', '');
     return this.adminService.getBukuTamuHariIni(access_token, user_id);
   }
 
@@ -147,9 +148,10 @@ export class AdminController {
     required: true,
   })
   async getBukuTamuMingguIni(
-    @Headers('access_token') access_token: string,
+    @Headers('access_token') authorization: string,
     @Headers('user_id') user_id: string,
   ) {
+    const access_token = authorization?.replace('Bearer ', '');
     return this.adminService.getBukuTamuMingguIni(access_token, user_id);
   }
 
@@ -165,9 +167,10 @@ export class AdminController {
     required: true,
   })
   async getBukuTamuBulanIni(
-    @Headers('access_token') access_token: string,
+    @Headers('access_token') authorization: string,
     @Headers('user_id') user_id: string,
   ) {
+    const access_token = authorization?.replace('Bearer ', '');
     return this.adminService.getBukuTamuBulanIni(access_token, user_id);
   }
 }

@@ -62,7 +62,7 @@ export declare class AdminController {
             stasiun: any;
         }[];
     }>;
-    getBukuTamuHariIni(access_token: string, user_id: string): Promise<any>;
-    getBukuTamuMingguIni(access_token: string, user_id: string): Promise<any>;
-    getBukuTamuBulanIni(access_token: string, user_id: string): Promise<any>;
+    getBukuTamuHariIni(authorization: string, user_id: string): Promise<any>;
+    getBukuTamuMingguIni(authorization: string, user_id: string): Promise<any>;
+    getBukuTamuBulanIni(authorization: string, user_id: string): Promise<any>;
 }

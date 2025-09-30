@@ -67,7 +67,7 @@ export declare class AdminService {
             stasiun: any;
         }[];
     }>;
-    private getBukuTamuByPeriod;
+    getBukuTamuByPeriod(access_token: string, user_id: string, period: 'today' | 'week' | 'month'): Promise<any>;
     getBukuTamuHariIni(access_token: string, user_id: string): Promise<any>;
     getBukuTamuMingguIni(access_token: string, user_id: string): Promise<any>;
     getBukuTamuBulanIni(access_token: string, user_id: string): Promise<any>;

@@ -47,13 +47,16 @@ let AdminController = class AdminController {
     async getBukuTamu(access_token, user_id, period, startDate, endDate, filterStasiunId) {
         return this.adminService.getBukuTamu(access_token, user_id, period, startDate, endDate, filterStasiunId);
     }
-    async getBukuTamuHariIni(access_token, user_id) {
+    async getBukuTamuHariIni(authorization, user_id) {
+        const access_token = authorization?.replace('Bearer ', '');
         return this.adminService.getBukuTamuHariIni(access_token, user_id);
     }
-    async getBukuTamuMingguIni(access_token, user_id) {
+    async getBukuTamuMingguIni(authorization, user_id) {
+        const access_token = authorization?.replace('Bearer ', '');
         return this.adminService.getBukuTamuMingguIni(access_token, user_id);
     }
-    async getBukuTamuBulanIni(access_token, user_id) {
+    async getBukuTamuBulanIni(authorization, user_id) {
+        const access_token = authorization?.replace('Bearer ', '');
         return this.adminService.getBukuTamuBulanIni(access_token, user_id);
     }
 };

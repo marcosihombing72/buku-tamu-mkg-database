@@ -52,20 +52,19 @@ export declare class AdminService {
         isSuperadmin: boolean;
         count: number;
         data: {
-            Waktu_Kunjungan: string;
-            ID_Buku_Tamu: any;
-            ID_Stasiun: any;
-            Tujuan: any;
-            Tanda_Tangan: any;
-            Nama_Depan: any;
-            Nama_Belakang: any;
-            Email: any;
-            No_Telepon: any;
-            Asal: any;
-            Instansi: any;
-            Stasiun: {
-                Nama_Stasiun: any;
-            }[];
+            id: any;
+            stasiun_id: any;
+            tujuan: any;
+            waktu: string;
+            tanda_tangan: any;
+            nama_depan: any;
+            nama_belakang: any;
+            email: any;
+            telepon: any;
+            asal: any;
+            instansi: any;
+            alamat: any;
+            stasiun: any;
         }[];
     }>;
     private getBukuTamuByPeriod;

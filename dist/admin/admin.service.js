@@ -313,19 +313,20 @@ let AdminService = class AdminService {
         let bukuTamuQuery = supabase
             .from('Buku_Tamu')
             .select(`
-      ID_Buku_Tamu,
-      ID_Stasiun,
-      Tujuan,
-      Waktu_Kunjungan,
-      Tanda_Tangan,
-      Nama_Depan,
-      Nama_Belakang,
-      Email,
-      No_Telepon,
-      Asal,
-      Instansi,
-      Stasiun:ID_Stasiun(Nama_Stasiun)
-    `)
+    ID_Buku_Tamu,
+    ID_Stasiun,
+    Tujuan,
+    Waktu_Kunjungan,
+    Tanda_Tangan,
+    Nama_Depan_Pengunjung,
+    Nama_Belakang_Pengunjung,
+    Email_Pengunjung,
+    No_Telepon_Pengunjung,
+    Asal_Pengunjung,
+    Asal_Instansi,
+    Alamat_Lengkap,
+    Stasiun:ID_Stasiun(Nama_Stasiun)
+  `)
             .order('Waktu_Kunjungan', { ascending: false });
         if (!isSuperadmin) {
             if (!adminData.ID_Stasiun) {
@@ -359,8 +360,19 @@ let AdminService = class AdminService {
             throw new common_1.BadRequestException('Failed to fetch Buku Tamu');
         }
         const formattedData = bukuTamuData.map((item) => ({
-            ...item,
-            Waktu_Kunjungan: (0, dayjs_1.default)(item.Waktu_Kunjungan).format('dddd, D MMMM YYYY, HH.mm'),
+            id: item.ID_Buku_Tamu,
+            stasiun_id: item.ID_Stasiun,
+            tujuan: item.Tujuan,
+            waktu: (0, dayjs_1.default)(item.Waktu_Kunjungan).format('dddd, D MMMM YYYY, HH.mm'),
+            tanda_tangan: item.Tanda_Tangan,
+            nama_depan: item.Nama_Depan_Pengunjung,
+            nama_belakang: item.Nama_Belakang_Pengunjung,
+            email: item.Email_Pengunjung,
+            telepon: item.No_Telepon_Pengunjung,
+            asal: item.Asal_Pengunjung,
+            instansi: item.Asal_Instansi,
+            alamat: item.Alamat_Lengkap,
+            stasiun: item.Stasiun?.[0]?.Nama_Stasiun,
         }));
         return {
             filter: {

@@ -15,7 +15,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminService = void 0;
 const supabase_service_1 = require("../supabase/supabase.service");
 const common_1 = require("@nestjs/common");
-const crypto_1 = require("crypto");
 const dayjs_1 = __importDefault(require("dayjs"));
 require("dayjs/locale/id");
 const customParseFormat_1 = __importDefault(require("dayjs/plugin/customParseFormat"));
@@ -163,7 +162,7 @@ let AdminService = class AdminService {
                     throw new common_1.BadRequestException('Ukuran file maksimal 10MB');
                 }
                 const fileExt = foto.originalname.split('.').pop();
-                uploadedFileName = `${user_id}_${(0, crypto_1.randomUUID)()}.${fileExt}`;
+                uploadedFileName = `${user_id}.${fileExt}`;
                 if (fotoUrl) {
                     await this.deleteOldPhoto(fotoUrl);
                 }
@@ -245,20 +244,13 @@ let AdminService = class AdminService {
     async deleteOldPhoto(fotoUrl) {
         const supabase = this.supabaseService.getClient();
         try {
-            if (!fotoUrl)
-                return;
             const oldFileName = fotoUrl.split('/').pop();
             if (oldFileName) {
-                const { error } = await supabase.storage
-                    .from('foto-admin')
-                    .remove([oldFileName]);
-                if (error) {
-                    console.error('Gagal menghapus foto lama:', error.message);
-                }
+                await supabase.storage.from('foto-admin').remove([oldFileName]);
             }
         }
         catch (err) {
-            console.error('Gagal menghapus foto lama (exception):', err);
+            console.error('Gagal menghapus foto lama:', err);
         }
     }
     async getDashboard(user_id, access_token) {
@@ -568,8 +560,7 @@ let AdminService = class AdminService {
                 throw new common_1.BadRequestException('Ukuran file maksimal 10MB');
             }
             const fileExt = foto.originalname.split('.').pop();
-            const uniqueId = (0, crypto_1.randomUUID)();
-            const uploadedFileName = `${newUserId}_${uniqueId}.${fileExt}`;
+            const uploadedFileName = `${newUserId}.${fileExt}`;
             const { error: uploadError } = await supabase.storage
                 .from('foto-admin')
                 .upload(uploadedFileName, foto.buffer, {
@@ -649,8 +640,7 @@ let AdminService = class AdminService {
                 await this.deleteOldPhoto(existingAdmin.Foto_Admin);
             }
             const fileExt = dto.foto.originalname.split('.').pop();
-            const uniqueId = (0, crypto_1.randomUUID)();
-            const filePath = `${id_admin}_${uniqueId}.${fileExt}`;
+            const filePath = `foto-admin/${id_admin}.${fileExt}`;
             const { error: uploadError } = await supabase.storage
                 .from('foto-admin')
                 .upload(filePath, dto.foto.buffer, {

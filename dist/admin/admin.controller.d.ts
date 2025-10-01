@@ -1,8 +1,8 @@
-import { AdminService } from './admin.service';
-import { CreateAdminDto } from './dto/create-admin.dto';
-import { LoginAdminDto } from './dto/login-admin.dto';
-import { ResetPasswordAdminDto } from './dto/reset-password-admin.dto';
-import { UpdateProfileAdminDto } from './dto/update-profile-admin.dto';
+import { AdminService } from '@/admin/admin.service';
+import { CreateAdminDto } from '@/admin/dto/create-admin.dto';
+import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
+import { ResetPasswordAdminDto } from '@/admin/dto/reset-password-admin.dto';
+import { UpdateProfileAdminDto } from '@/admin/dto/update-profile-admin.dto';
 export declare class AdminController {
     private readonly adminService;
     constructor(adminService: AdminService);
@@ -88,7 +88,7 @@ export declare class AdminController {
         message: string;
         id: string;
         email: string;
-        peran: import("./dto/create-admin.dto").PeranAdminEnum;
+        peran: import("@/admin/dto/create-admin.dto").PeranAdminEnum;
     }>;
     updateAdmin(dto: UpdateProfileAdminDto, foto: Express.Multer.File, access_token: string, user_id: string, id_admin: string): Promise<{
         message: string;

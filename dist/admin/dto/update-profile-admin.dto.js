@@ -16,6 +16,7 @@ class UpdateProfileAdminDto {
     nama_depan;
     nama_belakang;
     password;
+    confirmPassword;
     foto;
 }
 exports.UpdateProfileAdminDto = UpdateProfileAdminDto;
@@ -38,12 +39,19 @@ __decorate([
     __metadata("design:type", String)
 ], UpdateProfileAdminDto.prototype, "password", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({ example: 'Konfirmasi password baru admin', required: false }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateProfileAdminDto.prototype, "confirmPassword", void 0);
+__decorate([
     (0, swagger_1.ApiProperty)({
         type: 'string',
         format: 'binary',
         example: 'foto (PNG/JPG)',
         required: false,
     }),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Object)
 ], UpdateProfileAdminDto.prototype, "foto", void 0);
 //# sourceMappingURL=update-profile-admin.dto.js.map

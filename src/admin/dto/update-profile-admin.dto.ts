@@ -17,11 +17,17 @@ export class UpdateProfileAdminDto {
   @IsString()
   password?: string;
 
+  @ApiProperty({ example: 'Konfirmasi password baru admin', required: false })
+  @IsOptional()
+  @IsString()
+  confirmPassword?: string;
+
   @ApiProperty({
     type: 'string',
     format: 'binary',
     example: 'foto (PNG/JPG)',
     required: false,
   })
-  foto: any;
+  @IsOptional()
+  foto?: any;
 }

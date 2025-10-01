@@ -1,4 +1,3 @@
-import { PeranAdminEnum } from '@/admin/dto/create-admin.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEmail,
@@ -7,6 +6,11 @@ import {
   IsString,
   MinLength,
 } from 'class-validator';
+
+export enum PeranAdminEnum {
+  ADMIN = 'Admin',
+  SUPERADMIN = 'Superadmin',
+}
 
 export class UpdateAdminDto {
   @ApiProperty({ example: 'Budi', description: 'Nama depan admin' })

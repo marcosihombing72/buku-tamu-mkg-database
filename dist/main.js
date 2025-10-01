@@ -10,7 +10,6 @@ const swagger_1 = require("@nestjs/swagger");
 const express_1 = __importDefault(require("express"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const helmet_1 = __importDefault(require("helmet"));
-require("tsconfig-paths/register");
 const server = (0, express_1.default)();
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule, new platform_express_1.ExpressAdapter(server));

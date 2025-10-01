@@ -1,8 +1,8 @@
-import { AdminService } from '@/admin/admin.service';
-import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
-import { ResetPasswordAdminDto } from '@/admin/dto/reset-password-admin.dto';
-import { UpdateProfileAdminDto } from '@/admin/dto/update-profile-admin.dto';
+import { AdminService } from './admin.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
+import { LoginAdminDto } from './dto/login-admin.dto';
+import { ResetPasswordAdminDto } from './dto/reset-password-admin.dto';
+import { UpdateProfileAdminDto } from './dto/update-profile-admin.dto';
 export declare class AdminController {
     private readonly adminService;
     constructor(adminService: AdminService);

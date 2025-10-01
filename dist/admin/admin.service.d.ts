@@ -1,6 +1,5 @@
 import { SupabaseService } from '@/supabase/supabase.service';
 import 'dayjs/locale/id';
-import { CreateAdminDto } from '@/admin/dto/create-admin.dto';
 import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
 import { ResetPasswordAdminDto } from '@/admin/dto/reset-password-admin.dto';
 import { UpdateProfileAdminDto } from '@/admin/dto/update-profile-admin.dto';
@@ -90,12 +89,6 @@ export declare class AdminService {
                 Nama_Stasiun: any;
             }[];
         }[];
-    }>;
-    createAdmin(dto: CreateAdminDto, foto: Express.Multer.File, access_token: string, user_id: string): Promise<{
-        message: string;
-        id: string;
-        email: string;
-        peran: import("@/admin/dto/create-admin.dto").PeranAdminEnum;
     }>;
     updateAdmin(id_admin: string, dto: UpdateProfileAdminDto, access_token: string, user_id: string): Promise<{
         message: string;

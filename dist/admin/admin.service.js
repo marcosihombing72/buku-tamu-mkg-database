@@ -544,65 +544,6 @@ let AdminService = class AdminService {
             data,
         };
     }
-    async createAdmin(dto, foto, access_token, user_id) {
-        const supabase = this.supabaseService.getClient();
-        const supabaseAdmin = this.supabaseService.getAdminClient();
-        if (dto.password !== dto.confirmPassword) {
-            throw new common_1.BadRequestException('Konfirmasi password tidak cocok');
-        }
-        const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-            email: dto.email,
-            password: dto.password,
-            email_confirm: true,
-        });
-        if (createUserError) {
-            throw new common_1.BadRequestException('Gagal membuat user baru: ' + createUserError.message);
-        }
-        const newUserId = newUser.user.id;
-        let fotoUrl = null;
-        if (foto) {
-            if (!['image/jpeg', 'image/png'].includes(foto.mimetype)) {
-                throw new common_1.BadRequestException('Format file harus JPG atau PNG');
-            }
-            if (foto.size > 10 * 1024 * 1024) {
-                throw new common_1.BadRequestException('Ukuran file maksimal 10MB');
-            }
-            const fileExt = foto.originalname.split('.').pop();
-            const uniqueId = (0, crypto_1.randomUUID)();
-            const uploadedFileName = `${newUserId}_${uniqueId}.${fileExt}`;
-            const { error: uploadError } = await supabase.storage
-                .from('foto-admin')
-                .upload(uploadedFileName, foto.buffer, {
-                contentType: foto.mimetype,
-                upsert: true,
-            });
-            if (uploadError) {
-                throw new common_1.BadRequestException('Gagal mengunggah foto baru');
-            }
-            fotoUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/foto-admin/${uploadedFileName}`;
-        }
-        const { error: insertError } = await supabase.from('Admin').insert([
-            {
-                ID_Admin: newUserId,
-                Peran: dto.peran,
-                ID_Stasiun: dto.peran === 'Admin' ? dto.id_stasiun : null,
-                Created_At: new Date().toISOString(),
-                Nama_Depan_Admin: dto.nama_depan,
-                Nama_Belakang_Admin: dto.nama_belakang || null,
-                Email_Admin: dto.email,
-                Foto_Admin: fotoUrl,
-            },
-        ]);
-        if (insertError) {
-            throw new common_1.BadRequestException('Gagal menyimpan data admin: ' + insertError.message);
-        }
-        return {
-            message: 'Admin berhasil dibuat',
-            id: newUserId,
-            email: dto.email,
-            peran: dto.peran,
-        };
-    }
     async updateAdmin(id_admin, dto, access_token, user_id) {
         const supabase = this.supabaseService.getClient();
         const supabaseAdmin = this.supabaseService.getAdminClient();

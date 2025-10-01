@@ -21,7 +21,6 @@ import {
 } from '@nestjs/swagger';
 
 import { AdminService } from '@/admin/admin.service';
-import { CreateAdminDto } from '@/admin/dto/create-admin.dto';
 import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
 import { ResetPasswordAdminDto } from '@/admin/dto/reset-password-admin.dto';
 import { UpdateProfileAdminDto } from '@/admin/dto/update-profile-admin.dto';
@@ -207,42 +206,42 @@ export class AdminController {
     );
   }
 
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        nama_depan: { type: 'string' },
-        nama_belakang: { type: 'string' },
-        email: { type: 'string' },
-        password: { type: 'string' },
-        confirmPassword: { type: 'string' },
-        peran: { type: 'string' },
-        id_stasiun: { type: 'string' },
-        foto: { type: 'string', format: 'binary' },
-      },
-    },
-  })
-  @Post('create-admin')
-  @ApiHeader({
-    name: 'access_token',
-    description: 'your-access_token',
-    required: true,
-  })
-  @ApiHeader({
-    name: 'user_id',
-    description: 'ID user',
-    required: true,
-  })
-  @UseInterceptors(FileInterceptor('foto'))
-  async createAdmin(
-    @Body() dto: CreateAdminDto,
-    @UploadedFile() foto: Express.Multer.File,
-    @Headers('access_token') access_token: string,
-    @Headers('user_id') user_id: string,
-  ) {
-    return this.adminService.createAdmin(dto, foto, access_token, user_id);
-  }
+  // @ApiConsumes('multipart/form-data')
+  // @ApiBody({
+  //   schema: {
+  //     type: 'object',
+  //     properties: {
+  //       nama_depan: { type: 'string' },
+  //       nama_belakang: { type: 'string' },
+  //       email: { type: 'string' },
+  //       password: { type: 'string' },
+  //       confirmPassword: { type: 'string' },
+  //       peran: { type: 'string' },
+  //       id_stasiun: { type: 'string' },
+  //       foto: { type: 'string', format: 'binary' },
+  //     },
+  //   },
+  // })
+  // @Post('create-admin')
+  // @ApiHeader({
+  //   name: 'access_token',
+  //   description: 'your-access_token',
+  //   required: true,
+  // })
+  // @ApiHeader({
+  //   name: 'user_id',
+  //   description: 'ID user',
+  //   required: true,
+  // })
+  // @UseInterceptors(FileInterceptor('foto'))
+  // async createAdmin(
+  //   @Body() dto: CreateAdminDto,
+  //   @UploadedFile() foto: Express.Multer.File,
+  //   @Headers('access_token') access_token: string,
+  //   @Headers('user_id') user_id: string,
+  // ) {
+  //   return this.adminService.createAdmin(dto, foto, access_token, user_id);
+  // }
 
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UpdateProfileAdminDto })

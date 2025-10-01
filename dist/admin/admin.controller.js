@@ -17,7 +17,6 @@ const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
 const admin_service_1 = require("./admin.service");
-const create_admin_dto_1 = require("./dto/create-admin.dto");
 const login_admin_dto_1 = require("./dto/login-admin.dto");
 const reset_password_admin_dto_1 = require("./dto/reset-password-admin.dto");
 const update_profile_admin_dto_1 = require("./dto/update-profile-admin.dto");
@@ -62,9 +61,6 @@ let AdminController = class AdminController {
     }
     async getAllAdmins(access_token, user_id, search, filterPeran, filterStasiunId) {
         return this.adminService.getAllAdmins(access_token, user_id, search, filterPeran, filterStasiunId);
-    }
-    async createAdmin(dto, foto, access_token, user_id) {
-        return this.adminService.createAdmin(dto, foto, access_token, user_id);
     }
     async updateAdmin(dto, foto, access_token, user_id, id_admin) {
         return this.adminService.updateAdmin(user_id, {
@@ -234,43 +230,6 @@ __decorate([
     __metadata("design:paramtypes", [String, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getAllAdmins", null);
-__decorate([
-    (0, swagger_1.ApiConsumes)('multipart/form-data'),
-    (0, swagger_1.ApiBody)({
-        schema: {
-            type: 'object',
-            properties: {
-                nama_depan: { type: 'string' },
-                nama_belakang: { type: 'string' },
-                email: { type: 'string' },
-                password: { type: 'string' },
-                confirmPassword: { type: 'string' },
-                peran: { type: 'string' },
-                id_stasiun: { type: 'string' },
-                foto: { type: 'string', format: 'binary' },
-            },
-        },
-    }),
-    (0, common_1.Post)('create-admin'),
-    (0, swagger_1.ApiHeader)({
-        name: 'access_token',
-        description: 'your-access_token',
-        required: true,
-    }),
-    (0, swagger_1.ApiHeader)({
-        name: 'user_id',
-        description: 'ID user',
-        required: true,
-    }),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('foto')),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.UploadedFile)()),
-    __param(2, (0, common_1.Headers)('access_token')),
-    __param(3, (0, common_1.Headers)('user_id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_admin_dto_1.CreateAdminDto, Object, String, String]),
-    __metadata("design:returntype", Promise)
-], AdminController.prototype, "createAdmin", null);
 __decorate([
     (0, swagger_1.ApiConsumes)('multipart/form-data'),
     (0, swagger_1.ApiBody)({ type: update_profile_admin_dto_1.UpdateProfileAdminDto }),

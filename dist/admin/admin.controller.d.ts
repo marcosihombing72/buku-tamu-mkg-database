@@ -48,19 +48,21 @@ export declare class AdminController {
         isSuperadmin: boolean;
         count: number;
         data: {
-            id: any;
-            stasiun_id: any;
-            tujuan: any;
-            waktu: string;
-            tanda_tangan: any;
-            nama_depan: any;
-            nama_belakang: any;
-            email: any;
-            telepon: any;
-            asal: any;
-            instansi: any;
-            alamat: any;
-            stasiun: any;
+            ID_Buku_Tamu: any;
+            ID_Stasiun: any;
+            Tujuan: any;
+            Waktu_Kunjungan: any;
+            Tanda_Tangan: any;
+            Nama_Depan_Pengunjung: any;
+            Nama_Belakang_Pengunjung: any;
+            Email_Pengunjung: any;
+            No_Telepon_Pengunjung: any;
+            Asal_Pengunjung: any;
+            Asal_Instansi: any;
+            Alamat_Lengkap: any;
+            Stasiun: {
+                Nama_Stasiun: any;
+            }[];
         }[];
     }>;
     getBukuTamuHariIni(authorization: string, user_id: string): Promise<any>;

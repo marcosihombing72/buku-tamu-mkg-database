@@ -383,21 +383,6 @@ let AdminService = class AdminService {
             console.error('Buku Tamu query error:', bukuTamuError);
             throw new common_1.BadRequestException('Failed to fetch Buku Tamu');
         }
-        const formattedData = bukuTamuData.map((item) => ({
-            id: item.ID_Buku_Tamu,
-            stasiun_id: item.ID_Stasiun,
-            tujuan: item.Tujuan,
-            waktu: (0, dayjs_1.default)(item.Waktu_Kunjungan).format('dddd, D MMMM YYYY, HH.mm'),
-            tanda_tangan: item.Tanda_Tangan,
-            nama_depan: item.Nama_Depan_Pengunjung,
-            nama_belakang: item.Nama_Belakang_Pengunjung,
-            email: item.Email_Pengunjung,
-            telepon: item.No_Telepon_Pengunjung,
-            asal: item.Asal_Pengunjung,
-            instansi: item.Asal_Instansi,
-            alamat: item.Alamat_Lengkap,
-            stasiun: item.Stasiun?.[0]?.Nama_Stasiun,
-        }));
         return {
             filter: {
                 period: period || null,
@@ -408,8 +393,8 @@ let AdminService = class AdminService {
                     : adminData.ID_Stasiun,
             },
             isSuperadmin,
-            count: formattedData.length,
-            data: formattedData,
+            count: bukuTamuData.length,
+            data: bukuTamuData,
         };
     }
     async getBukuTamuByPeriod(access_token, user_id, period) {

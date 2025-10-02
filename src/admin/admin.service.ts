@@ -547,6 +547,27 @@ export class AdminService {
       throw new BadRequestException('Failed to fetch Buku Tamu');
     }
 
+    // Ambil daftar ID_Stasiun unik
+    const stasiunIds = [
+      ...new Set(bukuTamuData.map((item) => item.ID_Stasiun)),
+    ];
+
+    // Query tabel Stasiun manual
+    const { data: stasiunData, error: stasiunError } = await supabase
+      .from('Stasiun')
+      .select('ID_Stasiun, Nama_Stasiun')
+      .in('ID_Stasiun', stasiunIds);
+
+    if (stasiunError) {
+      console.error('Stasiun query error:', stasiunError);
+      throw new BadRequestException('Failed to fetch Stasiun');
+    }
+
+    // Buat map ID → Nama
+    const stasiunMap = new Map(
+      stasiunData.map((s) => [s.ID_Stasiun, s.Nama_Stasiun]),
+    );
+
     //*** Langkah 8: Format hasil dan kembalikan response ***
     const formattedData = bukuTamuData.map((item) => ({
       ID_Buku_Tamu: item.ID_Buku_Tamu,
@@ -563,7 +584,7 @@ export class AdminService {
       Asal_Pengunjung: item.Asal_Pengunjung,
       Asal_Instansi: item.Asal_Instansi,
       Alamat_Lengkap: item.Alamat_Lengkap,
-      Nama_Stasiun: item.Stasiun?.[0]?.Nama_Stasiun ?? null,
+      Nama_Stasiun: stasiunMap.get(item.ID_Stasiun) ?? null,
     }));
 
     //*** Langkah 9: Kembalikan response ***

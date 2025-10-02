@@ -383,6 +383,18 @@ let AdminService = class AdminService {
             console.error('Buku Tamu query error:', bukuTamuError);
             throw new common_1.BadRequestException('Failed to fetch Buku Tamu');
         }
+        const stasiunIds = [
+            ...new Set(bukuTamuData.map((item) => item.ID_Stasiun)),
+        ];
+        const { data: stasiunData, error: stasiunError } = await supabase
+            .from('Stasiun')
+            .select('ID_Stasiun, Nama_Stasiun')
+            .in('ID_Stasiun', stasiunIds);
+        if (stasiunError) {
+            console.error('Stasiun query error:', stasiunError);
+            throw new common_1.BadRequestException('Failed to fetch Stasiun');
+        }
+        const stasiunMap = new Map(stasiunData.map((s) => [s.ID_Stasiun, s.Nama_Stasiun]));
         const formattedData = bukuTamuData.map((item) => ({
             ID_Buku_Tamu: item.ID_Buku_Tamu,
             ID_Stasiun: item.ID_Stasiun,
@@ -396,7 +408,7 @@ let AdminService = class AdminService {
             Asal_Pengunjung: item.Asal_Pengunjung,
             Asal_Instansi: item.Asal_Instansi,
             Alamat_Lengkap: item.Alamat_Lengkap,
-            Nama_Stasiun: item.Stasiun?.[0]?.Nama_Stasiun ?? null,
+            Nama_Stasiun: stasiunMap.get(item.ID_Stasiun) ?? null,
         }));
         return {
             filter: {

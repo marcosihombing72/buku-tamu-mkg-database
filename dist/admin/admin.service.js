@@ -396,7 +396,7 @@ let AdminService = class AdminService {
             Asal_Pengunjung: item.Asal_Pengunjung,
             Asal_Instansi: item.Asal_Instansi,
             Alamat_Lengkap: item.Alamat_Lengkap,
-            Nama_Stasiun: item.Stasiun?.[0]?.Nama_Stasiun,
+            Nama_Stasiun: item.Stasiun?.[0]?.Nama_Stasiun ?? null,
         }));
         return {
             filter: {

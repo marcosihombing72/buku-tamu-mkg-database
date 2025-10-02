@@ -51,7 +51,7 @@ export declare class AdminController {
             ID_Buku_Tamu: any;
             ID_Stasiun: any;
             Tujuan: any;
-            Waktu_Kunjungan: any;
+            Waktu_Kunjungan: string;
             Tanda_Tangan: any;
             Nama_Depan_Pengunjung: any;
             Nama_Belakang_Pengunjung: any;
@@ -60,9 +60,7 @@ export declare class AdminController {
             Asal_Pengunjung: any;
             Asal_Instansi: any;
             Alamat_Lengkap: any;
-            Stasiun: {
-                Nama_Stasiun: any;
-            }[];
+            Nama_Stasiun: any;
         }[];
     }>;
     getBukuTamuHariIni(authorization: string, user_id: string): Promise<any>;

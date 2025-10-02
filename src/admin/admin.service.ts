@@ -547,6 +547,25 @@ export class AdminService {
       throw new BadRequestException('Failed to fetch Buku Tamu');
     }
 
+    //*** Langkah 8: Format hasil dan kembalikan response ***
+    const formattedData = bukuTamuData.map((item) => ({
+      ID_Buku_Tamu: item.ID_Buku_Tamu,
+      ID_Stasiun: item.ID_Stasiun,
+      Tujuan: item.Tujuan,
+      Waktu_Kunjungan: dayjs(item.Waktu_Kunjungan).format(
+        'dddd, D MMMM YYYY, HH.mm',
+      ),
+      Tanda_Tangan: item.Tanda_Tangan,
+      Nama_Depan_Pengunjung: item.Nama_Depan_Pengunjung,
+      Nama_Belakang_Pengunjung: item.Nama_Belakang_Pengunjung,
+      Email_Pengunjung: item.Email_Pengunjung,
+      No_Telepon_Pengunjung: item.No_Telepon_Pengunjung,
+      Asal_Pengunjung: item.Asal_Pengunjung,
+      Asal_Instansi: item.Asal_Instansi,
+      Alamat_Lengkap: item.Alamat_Lengkap,
+      Nama_Stasiun: item.Stasiun?.[0]?.Nama_Stasiun,
+    }));
+
     //*** Langkah 9: Kembalikan response ***
     return {
       filter: {
@@ -558,8 +577,8 @@ export class AdminService {
           : adminData.ID_Stasiun,
       },
       isSuperadmin,
-      count: bukuTamuData.length,
-      data: bukuTamuData,
+      count: formattedData.length,
+      data: formattedData,
     };
   }
 

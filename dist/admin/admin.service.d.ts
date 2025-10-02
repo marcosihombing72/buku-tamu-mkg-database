@@ -57,7 +57,7 @@ export declare class AdminService {
             ID_Buku_Tamu: any;
             ID_Stasiun: any;
             Tujuan: any;
-            Waktu_Kunjungan: any;
+            Waktu_Kunjungan: string;
             Tanda_Tangan: any;
             Nama_Depan_Pengunjung: any;
             Nama_Belakang_Pengunjung: any;
@@ -66,9 +66,7 @@ export declare class AdminService {
             Asal_Pengunjung: any;
             Asal_Instansi: any;
             Alamat_Lengkap: any;
-            Stasiun: {
-                Nama_Stasiun: any;
-            }[];
+            Nama_Stasiun: any;
         }[];
     }>;
     getBukuTamuByPeriod(access_token: string, user_id: string, period: 'today' | 'week' | 'month'): Promise<any>;

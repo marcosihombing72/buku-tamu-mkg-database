@@ -19,7 +19,11 @@ const crypto_1 = require("crypto");
 const dayjs_1 = __importDefault(require("dayjs"));
 require("dayjs/locale/id");
 const customParseFormat_1 = __importDefault(require("dayjs/plugin/customParseFormat"));
+const timezone_1 = __importDefault(require("dayjs/plugin/timezone"));
+const utc_1 = __importDefault(require("dayjs/plugin/utc"));
 dayjs_1.default.extend(customParseFormat_1.default);
+dayjs_1.default.extend(utc_1.default);
+dayjs_1.default.extend(timezone_1.default);
 dayjs_1.default.locale('id');
 let PengunjungService = class PengunjungService {
     supabaseService;
@@ -92,6 +96,9 @@ let PengunjungService = class PengunjungService {
         if (uploadError) {
             throw new common_1.BadRequestException(`Gagal upload tanda tangan: ${uploadError.message}`);
         }
+        const waktuKunjungan = (0, dayjs_1.default)()
+            .tz('Asia/Jakarta')
+            .format('YYYY-MM-DD HH:mm:ss');
         const { data: { publicUrl }, } = supabase.storage.from('tanda-tangan').getPublicUrl(fileName);
         const { error: insertError } = await supabase.from('Buku_Tamu').insert({
             Tujuan: dto.tujuan,
@@ -104,6 +111,7 @@ let PengunjungService = class PengunjungService {
             Asal_Instansi: dto.Asal_Instansi || null,
             Alamat_Lengkap: dto.Alamat_Lengkap,
             Tanda_Tangan: publicUrl,
+            Waktu_Kunjungan: waktuKunjungan,
         });
         if (insertError) {
             throw new common_1.BadRequestException(`Gagal simpan ke Buku_Tamu: ${insertError.message}`);

@@ -5,7 +5,12 @@ import { randomUUID } from 'crypto';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
+
 dayjs.extend(customParseFormat);
+dayjs.extend(utc);
+dayjs.extend(timezone);
 dayjs.locale('id');
 
 import { IsiBukuTamuDto } from '@/pengunjung/dto/create-buku-tamu.dto';
@@ -118,12 +123,17 @@ export class PengunjungService {
       );
     }
 
-    //*** Langkah 4: Dapatkan public URL dari file yang diupload ***
+    //*** Langkah 4: Generate waktu kunjungan (wib)***
+    const waktuKunjungan = dayjs()
+      .tz('Asia/Jakarta')
+      .format('YYYY-MM-DD HH:mm:ss');
+
+    //*** Langkah 5: Dapatkan public URL dari file yang diupload ***
     const {
       data: { publicUrl },
     } = supabase.storage.from('tanda-tangan').getPublicUrl(fileName);
 
-    //*** Langkah 5: Simpan data ke tabel Buku_Tamu ***
+    //*** Langkah 6: Simpan data ke tabel Buku_Tamu ***
     const { error: insertError } = await supabase.from('Buku_Tamu').insert({
       Tujuan: dto.tujuan,
       ID_Stasiun: dto.id_stasiun,
@@ -135,6 +145,7 @@ export class PengunjungService {
       Asal_Instansi: dto.Asal_Instansi || null,
       Alamat_Lengkap: dto.Alamat_Lengkap,
       Tanda_Tangan: publicUrl,
+      Waktu_Kunjungan: waktuKunjungan,
     });
 
     if (insertError) {

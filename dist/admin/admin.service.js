@@ -563,17 +563,26 @@ let AdminService = class AdminService {
         if (authError || !user?.id || user.id !== user_id) {
             throw new common_1.UnauthorizedException('Token tidak valid atau tidak sesuai');
         }
-        const { data: currentAdmin } = await supabase
+        const { data: currentAdmin, error: currentError } = await supabase
             .from('Admin')
             .select('Peran')
             .eq('ID_Admin', user_id)
             .single();
-        if (!currentAdmin) {
+        if (currentError || !currentAdmin) {
             throw new common_1.UnauthorizedException('Data admin tidak ditemukan');
         }
         if (currentAdmin.Peran !== 'Superadmin' && user_id !== id_admin) {
             throw new common_1.UnauthorizedException('Tidak diizinkan update admin lain');
         }
+        const { data: existingAdmin, error: existingError } = await supabase
+            .from('Admin')
+            .select('Foto_Admin')
+            .eq('ID_Admin', id_admin)
+            .single();
+        if (existingError) {
+            throw new common_1.BadRequestException('Gagal mengambil data admin lama');
+        }
+        let fotoUrl = existingAdmin?.Foto_Admin || null;
         if (dto.password) {
             if (dto.password !== dto.confirmPassword) {
                 throw new common_1.BadRequestException('Konfirmasi password tidak cocok');
@@ -585,12 +594,6 @@ let AdminService = class AdminService {
                 throw new common_1.BadRequestException('Gagal update password: ' + updatePassError.message);
             }
         }
-        const { data: existingAdmin } = await supabase
-            .from('Admin')
-            .select('Foto_Admin')
-            .eq('ID_Admin', id_admin)
-            .single();
-        let fotoUrl = null;
         if (dto.foto) {
             if (!['image/jpeg', 'image/png'].includes(dto.foto.mimetype)) {
                 throw new common_1.BadRequestException('Format file harus JPG atau PNG');
@@ -615,18 +618,22 @@ let AdminService = class AdminService {
             }
             fotoUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/foto-admin/${filePath}`;
         }
+        const updatePayload = {
+            ...(dto.nama_depan && { Nama_Depan_Admin: dto.nama_depan }),
+            ...(dto.nama_belakang && { Nama_Belakang_Admin: dto.nama_belakang }),
+            ...(fotoUrl && { Foto_Admin: fotoUrl }),
+        };
         const { error: updateError } = await supabase
             .from('Admin')
-            .update({
-            Nama_Depan_Admin: dto.nama_depan || undefined,
-            Nama_Belakang_Admin: dto.nama_belakang || undefined,
-            Foto_Admin: fotoUrl || undefined,
-        })
+            .update(updatePayload)
             .eq('ID_Admin', id_admin);
         if (updateError) {
             throw new common_1.BadRequestException('Gagal update data admin: ' + updateError.message);
         }
-        return { message: 'Admin berhasil diupdate' };
+        return {
+            message: 'Admin berhasil diupdate',
+            updated_fields: updatePayload,
+        };
     }
     async deleteAdmin(access_token, user_id, id_admin) {
         const supabase = this.supabaseService.getClient();

@@ -23,8 +23,12 @@ let LokasiController = class LokasiController {
     constructor(lokasiService) {
         this.lokasiService = lokasiService;
     }
-    async getAllLokasi() {
-        return this.lokasiService.getAllLokasi();
+    async getAllLokasi(nama, latitude, longitude) {
+        return this.lokasiService.getAllLokasi({
+            nama,
+            latitude: latitude ? Number(latitude) : undefined,
+            longitude: longitude ? Number(longitude) : undefined,
+        });
     }
     async createLokasi(dto) {
         return this.lokasiService.createLokasi(dto);
@@ -35,10 +39,30 @@ let LokasiController = class LokasiController {
 };
 exports.LokasiController = LokasiController;
 __decorate([
-    (0, swagger_1.ApiTags)('Lokasi'),
-    (0, common_1.Get)('lokasi'),
+    (0, common_1.Get)(),
+    (0, swagger_1.ApiQuery)({
+        name: 'nama',
+        required: false,
+        type: String,
+        description: 'Filter lokasi berdasarkan nama (opsional)',
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: 'latitude',
+        required: false,
+        type: Number,
+        description: 'Filter lokasi berdasarkan latitude (opsional)',
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: 'longitude',
+        required: false,
+        type: Number,
+        description: 'Filter lokasi berdasarkan longitude (opsional)',
+    }),
+    __param(0, (0, common_1.Query)('nama')),
+    __param(1, (0, common_1.Query)('latitude')),
+    __param(2, (0, common_1.Query)('longitude')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String, Number, Number]),
     __metadata("design:returntype", Promise)
 ], LokasiController.prototype, "getAllLokasi", null);
 __decorate([

@@ -92,6 +92,7 @@ export declare class AdminService {
     }>;
     updateAdmin(id_admin: string, dto: UpdateProfileAdminDto, access_token: string, user_id: string): Promise<{
         message: string;
+        updated_fields: any;
     }>;
     deleteAdmin(access_token: string, user_id: string, id_admin: string): Promise<{
         message: string;

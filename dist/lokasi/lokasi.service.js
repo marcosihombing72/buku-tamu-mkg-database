@@ -17,9 +17,22 @@ let LokasiService = class LokasiService {
     constructor(supabaseService) {
         this.supabaseService = supabaseService;
     }
-    async getAllLokasi() {
+    async getAllLokasi(filters) {
         const supabase = this.supabaseService.getClient();
-        const { data, error } = await supabase.from('Lokasi').select('*');
+        let query = supabase.from('Lokasi').select('*');
+        if (filters) {
+            const { latitude, longitude, nama } = filters;
+            if (latitude !== undefined) {
+                query = query.eq('latitude', latitude);
+            }
+            if (longitude !== undefined) {
+                query = query.eq('longitude', longitude);
+            }
+            if (nama) {
+                query = query.ilike('nama', `%${nama}%`);
+            }
+        }
+        const { data, error } = await query;
         if (error) {
             throw new common_1.BadRequestException(`Gagal ambil data lokasi: ${error.message}`);
         }

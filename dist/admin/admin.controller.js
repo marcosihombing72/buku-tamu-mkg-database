@@ -62,8 +62,8 @@ let AdminController = class AdminController {
     async getAllAdmins(access_token, user_id, search, filterPeran, filterStasiunId) {
         return this.adminService.getAllAdmins(access_token, user_id, search, filterPeran, filterStasiunId);
     }
-    async updateAdmin(dto, foto, access_token, user_id, id_admin) {
-        return this.adminService.updateAdmin(user_id, {
+    async updateAdmin(dto, foto, id_admin, access_token, user_id) {
+        return this.adminService.updateAdmin(id_admin, {
             ...dto,
             foto,
         }, access_token, user_id);
@@ -239,7 +239,6 @@ __decorate([
             properties: {
                 nama_depan: { type: 'string' },
                 nama_belakang: { type: 'string' },
-                email: { type: 'string' },
                 password: { type: 'string' },
                 confirmPassword: { type: 'string' },
                 foto: {
@@ -249,22 +248,31 @@ __decorate([
             },
         },
     }),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('foto')),
     (0, common_1.Put)('update-admin'),
     (0, swagger_1.ApiHeader)({
-        name: 'access_token',
-        description: 'your-access_token',
+        name: 'id_admin',
+        description: 'ID Admin yang akan diperbarui (hanya Superadmin yang bisa ubah admin lain)',
         required: true,
+        example: '788cb8a1-e20b-4dfb-990c-90dbbca67a96',
+    }),
+    (0, swagger_1.ApiHeader)({
+        name: 'access_token',
+        description: 'Token Supabase dari pengguna yang sedang login',
+        required: true,
+        example: 'your-access_token',
     }),
     (0, swagger_1.ApiHeader)({
         name: 'user_id',
-        description: 'ID user',
+        description: 'ID superadmin',
         required: true,
+        example: '69fe727f-17e3-4065-a16e-23efb26382cf',
     }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.UploadedFile)()),
-    __param(2, (0, common_1.Headers)('access_token')),
-    __param(3, (0, common_1.Headers)('user_id')),
-    __param(4, (0, common_1.Param)('id_admin')),
+    __param(2, (0, common_1.Headers)('id_admin')),
+    __param(3, (0, common_1.Headers)('access_token')),
+    __param(4, (0, common_1.Headers)('user_id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [update_profile_admin_dto_1.UpdateProfileAdminDto, Object, String, String, String]),
     __metadata("design:returntype", Promise)

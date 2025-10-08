@@ -251,7 +251,6 @@ export class AdminController {
       properties: {
         nama_depan: { type: 'string' },
         nama_belakang: { type: 'string' },
-        email: { type: 'string' },
         password: { type: 'string' },
         confirmPassword: { type: 'string' },
         foto: {
@@ -261,26 +260,36 @@ export class AdminController {
       },
     },
   })
+  @UseInterceptors(FileInterceptor('foto'))
   @Put('update-admin')
   @ApiHeader({
-    name: 'access_token',
-    description: 'your-access_token',
+    name: 'id_admin',
+    description:
+      'ID Admin yang akan diperbarui (hanya Superadmin yang bisa ubah admin lain)',
     required: true,
+    example: '788cb8a1-e20b-4dfb-990c-90dbbca67a96',
+  })
+  @ApiHeader({
+    name: 'access_token',
+    description: 'Token Supabase dari pengguna yang sedang login',
+    required: true,
+    example: 'your-access_token',
   })
   @ApiHeader({
     name: 'user_id',
-    description: 'ID user',
+    description: 'ID superadmin',
     required: true,
+    example: '69fe727f-17e3-4065-a16e-23efb26382cf',
   })
   async updateAdmin(
     @Body() dto: UpdateProfileAdminDto,
     @UploadedFile() foto: Express.Multer.File,
+    @Headers('id_admin') id_admin: string,
     @Headers('access_token') access_token: string,
     @Headers('user_id') user_id: string,
-    @Param('id_admin') id_admin: string,
   ) {
     return this.adminService.updateAdmin(
-      user_id,
+      id_admin,
       {
         ...dto,
         foto,

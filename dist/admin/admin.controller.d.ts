@@ -83,8 +83,9 @@ export declare class AdminController {
             }[];
         }[];
     }>;
-    updateAdmin(dto: UpdateProfileAdminDto, foto: Express.Multer.File, access_token: string, user_id: string, id_admin: string): Promise<{
+    updateAdmin(dto: UpdateProfileAdminDto, foto: Express.Multer.File, id_admin: string, access_token: string, user_id: string): Promise<{
         message: string;
+        updated_fields: any;
     }>;
     deleteAdmin(access_token: string, user_id: string, id_admin: string): Promise<{
         message: string;

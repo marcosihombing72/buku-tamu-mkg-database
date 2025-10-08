@@ -4,7 +4,11 @@ import { UpdateLokasiDto } from '@/lokasi/dto/update-lokasi.dto';
 export declare class LokasiService {
     private readonly supabaseService;
     constructor(supabaseService: SupabaseService);
-    getAllLokasi(): Promise<{
+    getAllLokasi(filters?: {
+        latitude?: number;
+        longitude?: number;
+        nama?: string;
+    }): Promise<{
         message: string;
         data: any[];
     }>;

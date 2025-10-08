@@ -900,7 +900,7 @@ export class AdminService {
   //   };
   // }
 
-  //*** Fungsi untuk mengupdate admin (hanya untuk Superadmin) ***
+  //*** Fungsi untuk mengupdate admin (Superadmin) ***
   async updateAdmin(
     id_admin: string,
     dto: UpdateProfileAdminDto,
@@ -921,23 +921,35 @@ export class AdminService {
       throw new UnauthorizedException('Token tidak valid atau tidak sesuai');
     }
 
-    //*** Langkah 3: Cek role yang login dan validasi hak akses ***
-    const { data: currentAdmin } = await supabase
+    //*** Langkah 3: Cek peran admin yang login ***
+    const { data: currentAdmin, error: currentError } = await supabase
       .from('Admin')
       .select('Peran')
       .eq('ID_Admin', user_id)
       .single();
 
-    if (!currentAdmin) {
+    if (currentError || !currentAdmin) {
       throw new UnauthorizedException('Data admin tidak ditemukan');
     }
 
-    // Hanya Superadmin yang boleh update admin lain
     if (currentAdmin.Peran !== 'Superadmin' && user_id !== id_admin) {
       throw new UnauthorizedException('Tidak diizinkan update admin lain');
     }
 
-    //*** Langkah 4: Update password jika ada perubahan ***
+    //*** Langkah 4: Ambil data lama admin ***
+    const { data: existingAdmin, error: existingError } = await supabase
+      .from('Admin')
+      .select('Foto_Admin')
+      .eq('ID_Admin', id_admin)
+      .single();
+
+    if (existingError) {
+      throw new BadRequestException('Gagal mengambil data admin lama');
+    }
+
+    let fotoUrl: string | null = existingAdmin?.Foto_Admin || null;
+
+    //*** Langkah 5: Update password jika ada ***
     if (dto.password) {
       if (dto.password !== dto.confirmPassword) {
         throw new BadRequestException('Konfirmasi password tidak cocok');
@@ -955,24 +967,17 @@ export class AdminService {
       }
     }
 
-    //*** Langkah 5: Ambil data admin saat ini dari tabel Admin (untuk cek foto lama) ***
-    const { data: existingAdmin } = await supabase
-      .from('Admin')
-      .select('Foto_Admin')
-      .eq('ID_Admin', id_admin)
-      .single();
-
-    //*** Langkah 6: Handle foto upload jika ada ***
-    let fotoUrl: string | null = null;
+    //*** Langkah 6: Upload foto baru jika ada ***
     if (dto.foto) {
       if (!['image/jpeg', 'image/png'].includes(dto.foto.mimetype)) {
         throw new BadRequestException('Format file harus JPG atau PNG');
       }
+
       if (dto.foto.size > 10 * 1024 * 1024) {
         throw new BadRequestException('Ukuran file maksimal 10MB');
       }
 
-      // Hapus foto lama kalau ada
+      // Hapus foto lama jika ada
       if (existingAdmin?.Foto_Admin) {
         await this.deleteOldPhoto(existingAdmin.Foto_Admin);
       }
@@ -997,14 +1002,16 @@ export class AdminService {
       fotoUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/foto-admin/${filePath}`;
     }
 
-    //*** Langkah 7: Update data admin di tabel Admin ***
+    //*** Langkah 7: Update data di tabel Admin ***
+    const updatePayload: any = {
+      ...(dto.nama_depan && { Nama_Depan_Admin: dto.nama_depan }),
+      ...(dto.nama_belakang && { Nama_Belakang_Admin: dto.nama_belakang }),
+      ...(fotoUrl && { Foto_Admin: fotoUrl }),
+    };
+
     const { error: updateError } = await supabase
       .from('Admin')
-      .update({
-        Nama_Depan_Admin: dto.nama_depan || undefined,
-        Nama_Belakang_Admin: dto.nama_belakang || undefined,
-        Foto_Admin: fotoUrl || undefined,
-      })
+      .update(updatePayload)
       .eq('ID_Admin', id_admin);
 
     if (updateError) {
@@ -1013,8 +1020,11 @@ export class AdminService {
       );
     }
 
-    //*** Langkah 8: Kembalikan response ***
-    return { message: 'Admin berhasil diupdate' };
+    //*** Langkah 8: Return hasil ***
+    return {
+      message: 'Admin berhasil diupdate',
+      updated_fields: updatePayload,
+    };
   }
 
   //*** Fungsi untuk menghapus admin (hanya untuk Superadmin) ***

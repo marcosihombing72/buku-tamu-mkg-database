@@ -6,29 +6,35 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 export class SupabaseService {
   private anonClient: SupabaseClient;
   private adminClient: SupabaseClient;
+  private supabaseUrl: string;
+  private anonKey: string;
+  private serviceRoleKey: string;
 
   constructor(private readonly configService: ConfigService) {
-    const url = this.configService.get<string>('SUPABASE_URL');
-    const anonKey = this.configService.get<string>('SUPABASE_KEY');
-    const serviceRoleKey = this.configService.get<string>(
+    this.supabaseUrl = this.configService.get<string>('SUPABASE_URL')!;
+    this.anonKey = this.configService.get<string>('SUPABASE_KEY')!;
+    this.serviceRoleKey = this.configService.get<string>(
       'SUPABASE_SERVICE_ROLE_KEY',
-    );
+    )!;
 
-    if (!url || !anonKey || !serviceRoleKey) {
+    if (!this.supabaseUrl || !this.anonKey || !this.serviceRoleKey) {
       throw new Error(
-        'SUPABASE_URL, SUPABASE_KEY, dan SUPABASE_SERVICE_ROLE_KEY harus diset di .env',
+        'SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_ROLE_KEY must be set',
       );
     }
 
-    // Client untuk operasi normal (query, insert, dll)
-    this.anonClient = createClient(url, anonKey);
-
-    // Client untuk operasi admin (update password, delete user, dll)
-    this.adminClient = createClient(url, serviceRoleKey);
+    this.anonClient = createClient(this.supabaseUrl, this.anonKey);
+    this.adminClient = createClient(this.supabaseUrl, this.serviceRoleKey);
   }
 
   getClient(): SupabaseClient {
     return this.anonClient;
+  }
+
+  getClientWithAccessToken(accessToken: string): SupabaseClient {
+    return createClient(this.supabaseUrl, this.anonKey, {
+      global: { headers: { Authorization: `Bearer ${accessToken}` } },
+    });
   }
 
   getAdminClient(): SupabaseClient {

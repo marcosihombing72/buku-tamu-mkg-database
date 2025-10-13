@@ -8,11 +8,14 @@ import {
   Post,
   Put,
   Query,
+  Request,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiConsumes,
   ApiHeader,
@@ -24,6 +27,9 @@ import { AdminService } from '@/admin/admin.service';
 import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
 import { ResetPasswordAdminDto } from '@/admin/dto/reset-password-admin.dto';
 import { UpdateProfileAdminDto } from '@/admin/dto/update-profile-admin.dto';
+import { SupabaseAuthGuard } from '@/supabase/supabase-auth.guard';
+
+import { SupabaseUser } from '@/interfaces/supabase-user.interface';
 
 @ApiTags('Admin')
 @Controller('admin')
@@ -40,26 +46,37 @@ export class AdminController {
     return this.adminService.resetPasswordAdmin(dto);
   }
 
+  @ApiBearerAuth('access-token')
+  @UseGuards(SupabaseAuthGuard)
+  @ApiHeader({ name: 'user_id', required: true })
   @Get('profile')
   async getProfile(
-    @Headers('access_token') access_token: string,
+    @Request() req: { user: SupabaseUser },
     @Headers('user_id') user_id: string,
   ) {
-    return this.adminService.getProfile(user_id, access_token);
+    const user = req.user;
+    return this.adminService.getProfile(user_id);
   }
 
+  @ApiBearerAuth('access-token')
+  @UseGuards(SupabaseAuthGuard)
   @ApiConsumes('multipart/form-data')
-  @ApiBody({ type: UpdateProfileAdminDto })
+  @ApiHeader({ name: 'user_id', required: true })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        nama_depan: { type: 'string' },
-        nama_belakang: { type: 'string' },
-        password: { type: 'string' },
+        nama_depan: { type: 'string', example: 'Rizal' },
+        nama_belakang: { type: 'string', example: 'Ramadhan' },
+        password: { type: 'string', example: 'newpassword123' },
+        confirmPassword: {
+          type: 'string',
+          example: 'newpassword123',
+        },
         foto: {
           type: 'string',
           format: 'binary',
+          example: 'foto_admin.png',
         },
       },
     },
@@ -67,31 +84,18 @@ export class AdminController {
   @Put('update-profile')
   @UseInterceptors(FileInterceptor('foto'))
   async updateProfile(
+    @Request() req: { user: SupabaseUser },
+    @Headers('user_id') user_id: string,
     @Body() dto: UpdateProfileAdminDto,
-    @UploadedFile() foto: Express.Multer.File,
-    @Headers('access_token') access_token: string,
-    @Headers('user_id') user_id: string,
+    @UploadedFile() foto?: Express.Multer.File,
   ) {
-    return this.adminService.updateProfile(
-      {
-        ...dto,
-        access_token,
-        user_id,
-      },
-      foto,
-    );
+    const user = req.user;
+    return this.adminService.updateProfile(user, user_id, dto, foto);
   }
 
-  @Get('dashboard')
-  async getDashboard(
-    @Headers('access_token') access_token: string,
-    @Headers('user_id') user_id: string,
-  ) {
-    return this.adminService.getDashboard(access_token, user_id);
-  }
-
+  @ApiBearerAuth('access-token')
+  @UseGuards(SupabaseAuthGuard)
   @Get('buku-tamu')
-  @ApiHeader({ name: 'access_token', required: true })
   @ApiHeader({ name: 'user_id', required: true })
   @ApiQuery({
     name: 'period',
@@ -102,15 +106,16 @@ export class AdminController {
   @ApiQuery({ name: 'endDate', required: false })
   @ApiQuery({ name: 'filterStasiunId', required: false })
   async getBukuTamu(
-    @Headers('access_token') access_token: string,
+    @Request() req: { user: SupabaseUser },
     @Headers('user_id') user_id: string,
     @Query('period') period?: 'today' | 'week' | 'month',
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('filterStasiunId') filterStasiunId?: string,
   ) {
+    const user = req.user;
     return this.adminService.getBukuTamu(
-      access_token,
+      user,
       user_id,
       period,
       startDate,
@@ -119,69 +124,57 @@ export class AdminController {
     );
   }
 
+  @ApiBearerAuth('access-token')
+  @UseGuards(SupabaseAuthGuard)
   @Get('buku-tamu/hari-ini')
-  @ApiHeader({
-    name: 'access_token',
-    description: 'your-access_token',
-    required: true,
-  })
   @ApiHeader({
     name: 'user_id',
     description: 'ID user',
     required: true,
   })
   async getBukuTamuHariIni(
-    @Headers('access_token') authorization: string,
+    @Request() req: { user: SupabaseUser },
     @Headers('user_id') user_id: string,
   ) {
-    const access_token = authorization?.replace('Bearer ', '');
-    return this.adminService.getBukuTamuHariIni(access_token, user_id);
+    const user = req.user;
+    return this.adminService.getBukuTamuHariIni(user, user_id);
   }
 
+  @ApiBearerAuth('access-token')
+  @UseGuards(SupabaseAuthGuard)
   @Get('buku-tamu/minggu-ini')
-  @ApiHeader({
-    name: 'access_token',
-    description: 'your-access_token',
-    required: true,
-  })
   @ApiHeader({
     name: 'user_id',
     description: 'ID user',
     required: true,
   })
   async getBukuTamuMingguIni(
-    @Headers('access_token') authorization: string,
+    @Request() req: { user: SupabaseUser },
     @Headers('user_id') user_id: string,
   ) {
-    const access_token = authorization?.replace('Bearer ', '');
-    return this.adminService.getBukuTamuMingguIni(access_token, user_id);
+    const user = req.user;
+    return this.adminService.getBukuTamuMingguIni(user, user_id);
   }
 
+  @ApiBearerAuth('access-token')
+  @UseGuards(SupabaseAuthGuard)
   @Get('buku-tamu/bulan-ini')
-  @ApiHeader({
-    name: 'access_token',
-    description: 'your-access_token',
-    required: true,
-  })
   @ApiHeader({
     name: 'user_id',
     description: 'ID user',
     required: true,
   })
   async getBukuTamuBulanIni(
-    @Headers('access_token') authorization: string,
+    @Request() req: { user: SupabaseUser },
     @Headers('user_id') user_id: string,
   ) {
-    const access_token = authorization?.replace('Bearer ', '');
-    return this.adminService.getBukuTamuBulanIni(access_token, user_id);
+    const user = req.user;
+    return this.adminService.getBukuTamuBulanIni(user, user_id);
   }
 
+  @ApiBearerAuth('access-token')
+  @UseGuards(SupabaseAuthGuard)
   @Get('all-admins')
-  @ApiHeader({
-    name: 'access_token',
-    description: 'your-access_token',
-    required: true,
-  })
   @ApiHeader({
     name: 'user_id',
     description: 'ID user',
@@ -191,14 +184,15 @@ export class AdminController {
   @ApiQuery({ name: 'filterPeran', required: false })
   @ApiQuery({ name: 'filterStasiunId', required: false })
   async getAllAdmins(
-    @Headers('access_token') access_token: string,
+    @Request() req: { user: SupabaseUser },
     @Headers('user_id') user_id: string,
     @Query('search') search?: string,
     @Query('filterPeran') filterPeran?: string,
     @Query('filterStasiunId') filterStasiunId?: string,
   ) {
+    const user = req.user;
     return this.adminService.getAllAdmins(
-      access_token,
+      user,
       user_id,
       search,
       filterPeran,
@@ -240,9 +234,11 @@ export class AdminController {
   //   @Headers('access_token') access_token: string,
   //   @Headers('user_id') user_id: string,
   // ) {
-  //   return this.adminService.createAdmin(dto, foto, access_token, user_id);
+  //   return this.adminService.createAdmin(dto, foto, user_id);
   // }
 
+  @ApiBearerAuth('access-token')
+  @UseGuards(SupabaseAuthGuard)
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UpdateProfileAdminDto })
   @ApiBody({
@@ -270,51 +266,44 @@ export class AdminController {
     example: '788cb8a1-e20b-4dfb-990c-90dbbca67a96',
   })
   @ApiHeader({
-    name: 'access_token',
-    description: 'Token Supabase dari pengguna yang sedang login',
-    required: true,
-    example: 'your-access_token',
-  })
-  @ApiHeader({
     name: 'user_id',
     description: 'ID superadmin',
     required: true,
     example: '69fe727f-17e3-4065-a16e-23efb26382cf',
   })
   async updateAdmin(
+    @Request() req: { user: SupabaseUser },
     @Body() dto: UpdateProfileAdminDto,
     @UploadedFile() foto: Express.Multer.File,
     @Headers('id_admin') id_admin: string,
-    @Headers('access_token') access_token: string,
     @Headers('user_id') user_id: string,
   ) {
+    const user = req.user;
     return this.adminService.updateAdmin(
+      user,
       id_admin,
       {
         ...dto,
         foto,
       },
-      access_token,
       user_id,
     );
   }
 
+  @ApiBearerAuth('access-token')
+  @UseGuards(SupabaseAuthGuard)
   @Delete('delete-admin/:id_admin')
-  @ApiHeader({
-    name: 'access_token',
-    description: 'your-access_token',
-    required: true,
-  })
   @ApiHeader({
     name: 'user_id',
     description: 'ID user',
     required: true,
   })
   async deleteAdmin(
-    @Headers('access_token') access_token: string,
+    @Request() req: { user: SupabaseUser },
     @Headers('user_id') user_id: string,
     @Param('id_admin') id_admin: string,
   ) {
-    return this.adminService.deleteAdmin(access_token, user_id, id_admin);
+    const user = req.user;
+    return this.adminService.deleteAdmin(user, user_id, id_admin);
   }
 }

@@ -17,19 +17,27 @@ let SupabaseService = class SupabaseService {
     configService;
     anonClient;
     adminClient;
+    supabaseUrl;
+    anonKey;
+    serviceRoleKey;
     constructor(configService) {
         this.configService = configService;
-        const url = this.configService.get('SUPABASE_URL');
-        const anonKey = this.configService.get('SUPABASE_KEY');
-        const serviceRoleKey = this.configService.get('SUPABASE_SERVICE_ROLE_KEY');
-        if (!url || !anonKey || !serviceRoleKey) {
-            throw new Error('SUPABASE_URL, SUPABASE_KEY, dan SUPABASE_SERVICE_ROLE_KEY harus diset di .env');
+        this.supabaseUrl = this.configService.get('SUPABASE_URL');
+        this.anonKey = this.configService.get('SUPABASE_KEY');
+        this.serviceRoleKey = this.configService.get('SUPABASE_SERVICE_ROLE_KEY');
+        if (!this.supabaseUrl || !this.anonKey || !this.serviceRoleKey) {
+            throw new Error('SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_ROLE_KEY must be set');
         }
-        this.anonClient = (0, supabase_js_1.createClient)(url, anonKey);
-        this.adminClient = (0, supabase_js_1.createClient)(url, serviceRoleKey);
+        this.anonClient = (0, supabase_js_1.createClient)(this.supabaseUrl, this.anonKey);
+        this.adminClient = (0, supabase_js_1.createClient)(this.supabaseUrl, this.serviceRoleKey);
     }
     getClient() {
         return this.anonClient;
+    }
+    getClientWithAccessToken(accessToken) {
+        return (0, supabase_js_1.createClient)(this.supabaseUrl, this.anonKey, {
+            global: { headers: { Authorization: `Bearer ${accessToken}` } },
+        });
     }
     getAdminClient() {
         return this.adminClient;

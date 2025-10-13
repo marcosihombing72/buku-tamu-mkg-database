@@ -2,6 +2,7 @@ import { AdminService } from '@/admin/admin.service';
 import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
 import { ResetPasswordAdminDto } from '@/admin/dto/reset-password-admin.dto';
 import { UpdateProfileAdminDto } from '@/admin/dto/update-profile-admin.dto';
+import { SupabaseUser } from '@/interfaces/supabase-user.interface';
 export declare class AdminController {
     private readonly adminService;
     constructor(adminService: AdminService);
@@ -13,13 +14,16 @@ export declare class AdminController {
         peran: any;
         nama_depan: any;
         nama_belakang: any;
+        id_stasiun: any;
         expires_at: number | undefined;
     }>;
     resetPasswordAdmin(dto: ResetPasswordAdminDto): Promise<{
         message: string;
         email: string;
     }>;
-    getProfile(access_token: string, user_id: string): Promise<{
+    getProfile(req: {
+        user: SupabaseUser;
+    }, user_id: string): Promise<{
         message: string;
         data: {
             user_id: any;
@@ -32,13 +36,12 @@ export declare class AdminController {
             stasiun_nama: any;
         };
     }>;
-    updateProfile(dto: UpdateProfileAdminDto, foto: Express.Multer.File, access_token: string, user_id: string): Promise<any>;
-    getDashboard(access_token: string, user_id: string): Promise<{
-        peran: any;
-        id_stasiun: any;
-        jumlah_tamu: number;
-    }>;
-    getBukuTamu(access_token: string, user_id: string, period?: 'today' | 'week' | 'month', startDate?: string, endDate?: string, filterStasiunId?: string): Promise<{
+    updateProfile(req: {
+        user: SupabaseUser;
+    }, user_id: string, dto: UpdateProfileAdminDto, foto?: Express.Multer.File): Promise<any>;
+    getBukuTamu(req: {
+        user: SupabaseUser;
+    }, user_id: string, period?: 'today' | 'week' | 'month', startDate?: string, endDate?: string, filterStasiunId?: string): Promise<{
         filter: {
             period: "today" | "week" | "month" | null;
             startDate: string | null;
@@ -63,10 +66,18 @@ export declare class AdminController {
             Nama_Stasiun: any;
         }[];
     }>;
-    getBukuTamuHariIni(authorization: string, user_id: string): Promise<any>;
-    getBukuTamuMingguIni(authorization: string, user_id: string): Promise<any>;
-    getBukuTamuBulanIni(authorization: string, user_id: string): Promise<any>;
-    getAllAdmins(access_token: string, user_id: string, search?: string, filterPeran?: string, filterStasiunId?: string): Promise<{
+    getBukuTamuHariIni(req: {
+        user: SupabaseUser;
+    }, user_id: string): Promise<any>;
+    getBukuTamuMingguIni(req: {
+        user: SupabaseUser;
+    }, user_id: string): Promise<any>;
+    getBukuTamuBulanIni(req: {
+        user: SupabaseUser;
+    }, user_id: string): Promise<any>;
+    getAllAdmins(req: {
+        user: SupabaseUser;
+    }, user_id: string, search?: string, filterPeran?: string, filterStasiunId?: string): Promise<{
         message: string;
         count: number;
         data: {
@@ -83,11 +94,15 @@ export declare class AdminController {
             }[];
         }[];
     }>;
-    updateAdmin(dto: UpdateProfileAdminDto, foto: Express.Multer.File, id_admin: string, access_token: string, user_id: string): Promise<{
+    updateAdmin(req: {
+        user: SupabaseUser;
+    }, dto: UpdateProfileAdminDto, foto: Express.Multer.File, id_admin: string, user_id: string): Promise<{
         message: string;
-        updated_fields: any;
+        updated_fields: Record<string, any>;
     }>;
-    deleteAdmin(access_token: string, user_id: string, id_admin: string): Promise<{
+    deleteAdmin(req: {
+        user: SupabaseUser;
+    }, user_id: string, id_admin: string): Promise<{
         message: string;
     }>;
 }

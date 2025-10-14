@@ -1,8 +1,15 @@
+import { CanActivate, ExecutionContext } from '@nestjs/common';
 import { AdminService } from '@/admin/admin.service';
 import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
 import { ResetPasswordAdminDto } from '@/admin/dto/reset-password-admin.dto';
 import { UpdateProfileAdminDto } from '@/admin/dto/update-profile-admin.dto';
 import { SupabaseUser } from '@/interfaces/supabase-user.interface';
+import { SupabaseService } from '@/supabase/supabase.service';
+export declare class SupabaseAuthGuard implements CanActivate {
+    private readonly supabaseService;
+    constructor(supabaseService: SupabaseService);
+    canActivate(context: ExecutionContext): Promise<boolean>;
+}
 export declare class AdminController {
     private readonly adminService;
     constructor(adminService: AdminService);

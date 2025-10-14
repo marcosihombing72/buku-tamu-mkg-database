@@ -12,7 +12,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AdminController = void 0;
+exports.AdminController = exports.SupabaseAuthGuard = void 0;
 const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
@@ -20,7 +20,33 @@ const admin_service_1 = require("./admin.service");
 const login_admin_dto_1 = require("./dto/login-admin.dto");
 const reset_password_admin_dto_1 = require("./dto/reset-password-admin.dto");
 const update_profile_admin_dto_1 = require("./dto/update-profile-admin.dto");
-const supabase_auth_guard_1 = require("../supabase/supabase-auth.guard");
+const supabase_service_1 = require("../supabase/supabase.service");
+let SupabaseAuthGuard = class SupabaseAuthGuard {
+    supabaseService;
+    constructor(supabaseService) {
+        this.supabaseService = supabaseService;
+    }
+    async canActivate(context) {
+        const request = context.switchToHttp().getRequest();
+        const authHeader = request.headers['authorization'];
+        if (!authHeader?.startsWith('Bearer ')) {
+            throw new common_1.UnauthorizedException('Missing or invalid Authorization header');
+        }
+        const token = authHeader.replace('Bearer ', '').trim();
+        const supabase = this.supabaseService.getClient();
+        const { data, error } = await supabase.auth.getUser(token);
+        if (error || !data?.user) {
+            throw new common_1.UnauthorizedException('Token tidak valid atau sudah kedaluwarsa');
+        }
+        request.user = data.user;
+        return true;
+    }
+};
+exports.SupabaseAuthGuard = SupabaseAuthGuard;
+exports.SupabaseAuthGuard = SupabaseAuthGuard = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [supabase_service_1.SupabaseService])
+], SupabaseAuthGuard);
 let AdminController = class AdminController {
     adminService;
     constructor(adminService) {
@@ -89,7 +115,7 @@ __decorate([
 ], AdminController.prototype, "resetPasswordAdmin", null);
 __decorate([
     (0, swagger_1.ApiBearerAuth)('access-token'),
-    (0, common_1.UseGuards)(supabase_auth_guard_1.SupabaseAuthGuard),
+    (0, common_1.UseGuards)(SupabaseAuthGuard),
     (0, swagger_1.ApiHeader)({ name: 'user_id', required: true }),
     (0, common_1.Get)('profile'),
     __param(0, (0, common_1.Request)()),
@@ -100,7 +126,7 @@ __decorate([
 ], AdminController.prototype, "getProfile", null);
 __decorate([
     (0, swagger_1.ApiBearerAuth)('access-token'),
-    (0, common_1.UseGuards)(supabase_auth_guard_1.SupabaseAuthGuard),
+    (0, common_1.UseGuards)(SupabaseAuthGuard),
     (0, swagger_1.ApiConsumes)('multipart/form-data'),
     (0, swagger_1.ApiHeader)({ name: 'user_id', required: true }),
     (0, swagger_1.ApiBody)({
@@ -134,7 +160,7 @@ __decorate([
 ], AdminController.prototype, "updateProfile", null);
 __decorate([
     (0, swagger_1.ApiBearerAuth)('access-token'),
-    (0, common_1.UseGuards)(supabase_auth_guard_1.SupabaseAuthGuard),
+    (0, common_1.UseGuards)(SupabaseAuthGuard),
     (0, common_1.Get)('buku-tamu'),
     (0, swagger_1.ApiHeader)({ name: 'user_id', required: true }),
     (0, swagger_1.ApiQuery)({
@@ -157,7 +183,7 @@ __decorate([
 ], AdminController.prototype, "getBukuTamu", null);
 __decorate([
     (0, swagger_1.ApiBearerAuth)('access-token'),
-    (0, common_1.UseGuards)(supabase_auth_guard_1.SupabaseAuthGuard),
+    (0, common_1.UseGuards)(SupabaseAuthGuard),
     (0, common_1.Get)('buku-tamu/hari-ini'),
     (0, swagger_1.ApiHeader)({
         name: 'user_id',
@@ -172,7 +198,7 @@ __decorate([
 ], AdminController.prototype, "getBukuTamuHariIni", null);
 __decorate([
     (0, swagger_1.ApiBearerAuth)('access-token'),
-    (0, common_1.UseGuards)(supabase_auth_guard_1.SupabaseAuthGuard),
+    (0, common_1.UseGuards)(SupabaseAuthGuard),
     (0, common_1.Get)('buku-tamu/minggu-ini'),
     (0, swagger_1.ApiHeader)({
         name: 'user_id',
@@ -187,7 +213,7 @@ __decorate([
 ], AdminController.prototype, "getBukuTamuMingguIni", null);
 __decorate([
     (0, swagger_1.ApiBearerAuth)('access-token'),
-    (0, common_1.UseGuards)(supabase_auth_guard_1.SupabaseAuthGuard),
+    (0, common_1.UseGuards)(SupabaseAuthGuard),
     (0, common_1.Get)('buku-tamu/bulan-ini'),
     (0, swagger_1.ApiHeader)({
         name: 'user_id',
@@ -202,7 +228,7 @@ __decorate([
 ], AdminController.prototype, "getBukuTamuBulanIni", null);
 __decorate([
     (0, swagger_1.ApiBearerAuth)('access-token'),
-    (0, common_1.UseGuards)(supabase_auth_guard_1.SupabaseAuthGuard),
+    (0, common_1.UseGuards)(SupabaseAuthGuard),
     (0, common_1.Get)('all-admins'),
     (0, swagger_1.ApiHeader)({
         name: 'user_id',
@@ -223,7 +249,7 @@ __decorate([
 ], AdminController.prototype, "getAllAdmins", null);
 __decorate([
     (0, swagger_1.ApiBearerAuth)('access-token'),
-    (0, common_1.UseGuards)(supabase_auth_guard_1.SupabaseAuthGuard),
+    (0, common_1.UseGuards)(SupabaseAuthGuard),
     (0, swagger_1.ApiConsumes)('multipart/form-data'),
     (0, swagger_1.ApiBody)({ type: update_profile_admin_dto_1.UpdateProfileAdminDto }),
     (0, swagger_1.ApiBody)({
@@ -266,7 +292,7 @@ __decorate([
 ], AdminController.prototype, "updateAdmin", null);
 __decorate([
     (0, swagger_1.ApiBearerAuth)('access-token'),
-    (0, common_1.UseGuards)(supabase_auth_guard_1.SupabaseAuthGuard),
+    (0, common_1.UseGuards)(SupabaseAuthGuard),
     (0, common_1.Delete)('delete-admin/:id_admin'),
     (0, swagger_1.ApiHeader)({
         name: 'user_id',

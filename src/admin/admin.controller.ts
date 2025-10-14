@@ -1,14 +1,18 @@
 import {
   Body,
+  CanActivate,
   Controller,
   Delete,
+  ExecutionContext,
   Get,
   Headers,
+  Injectable,
   Param,
   Post,
   Put,
   Query,
   Request,
+  UnauthorizedException,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -27,9 +31,38 @@ import { AdminService } from '@/admin/admin.service';
 import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
 import { ResetPasswordAdminDto } from '@/admin/dto/reset-password-admin.dto';
 import { UpdateProfileAdminDto } from '@/admin/dto/update-profile-admin.dto';
-import { SupabaseAuthGuard } from '@/supabase/supabase-auth.guard';
 
 import { SupabaseUser } from '@/interfaces/supabase-user.interface';
+import { SupabaseService } from '@/supabase/supabase.service';
+
+@Injectable()
+export class SupabaseAuthGuard implements CanActivate {
+  constructor(private readonly supabaseService: SupabaseService) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest();
+    const authHeader = request.headers['authorization'];
+
+    if (!authHeader?.startsWith('Bearer ')) {
+      throw new UnauthorizedException(
+        'Missing or invalid Authorization header',
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '').trim();
+    const supabase = this.supabaseService.getClient();
+    const { data, error } = await supabase.auth.getUser(token);
+
+    if (error || !data?.user) {
+      throw new UnauthorizedException(
+        'Token tidak valid atau sudah kedaluwarsa',
+      );
+    }
+
+    request.user = data.user;
+    return true;
+  }
+}
 
 @ApiTags('Admin')
 @Controller('admin')

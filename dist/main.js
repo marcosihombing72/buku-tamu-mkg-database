@@ -33,6 +33,9 @@ async function bootstrap() {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
+        name: 'Authorization',
+        description: 'Masukkan token Supabase di sini',
+        in: 'header',
     }, 'access-token')
         .build();
     const document = swagger_1.SwaggerModule.createDocument(app, config);

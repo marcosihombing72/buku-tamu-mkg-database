@@ -12,25 +12,29 @@ export class SupabaseAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const authHeader = request.headers['authorization'];
 
-    if (!authHeader?.startsWith('Bearer ')) {
+    const authHeader = request.headers['authorization'];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new UnauthorizedException(
-        'Missing or invalid Authorization header',
+        'Authorization header missing or malformed (Bearer token required).',
       );
     }
 
     const token = authHeader.replace('Bearer ', '').trim();
     const supabase = this.supabaseService.getClient();
-    const { data, error } = await supabase.auth.getUser(token);
 
-    if (error || !data?.user) {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
       throw new UnauthorizedException(
         'Token tidak valid atau sudah kedaluwarsa',
       );
     }
 
-    request.user = data.user;
+    request.user = user;
     return true;
   }
 }

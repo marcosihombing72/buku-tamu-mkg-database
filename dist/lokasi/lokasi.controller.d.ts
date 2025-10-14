@@ -4,7 +4,7 @@ import { LokasiService } from '@/lokasi/lokasi.service';
 export declare class LokasiController {
     private readonly lokasiService;
     constructor(lokasiService: LokasiService);
-    getAllLokasi(nama?: string, latitude?: number, longitude?: number): Promise<{
+    getAllLokasi(): Promise<{
         message: string;
         data: any[];
     }>;

@@ -9,7 +9,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminModule = void 0;
 const admin_controller_1 = require("./admin.controller");
 const admin_service_1 = require("./admin.service");
-const supabase_auth_guard_1 = require("../supabase/supabase-auth.guard");
 const supabase_module_1 = require("../supabase/supabase.module");
 const common_1 = require("@nestjs/common");
 let AdminModule = class AdminModule {
@@ -17,7 +16,7 @@ let AdminModule = class AdminModule {
 exports.AdminModule = AdminModule;
 exports.AdminModule = AdminModule = __decorate([
     (0, common_1.Module)({
-        imports: [supabase_module_1.SupabaseModule, supabase_auth_guard_1.SupabaseAuthGuard],
+        imports: [supabase_module_1.SupabaseModule],
         controllers: [admin_controller_1.AdminController],
         providers: [admin_service_1.AdminService],
     })

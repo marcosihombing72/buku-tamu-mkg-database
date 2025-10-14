@@ -8,14 +8,15 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SupabaseModule = void 0;
 const common_1 = require("@nestjs/common");
+const supabase_auth_guard_1 = require("./supabase-auth.guard");
 const supabase_service_1 = require("./supabase.service");
 let SupabaseModule = class SupabaseModule {
 };
 exports.SupabaseModule = SupabaseModule;
 exports.SupabaseModule = SupabaseModule = __decorate([
     (0, common_1.Module)({
-        providers: [supabase_service_1.SupabaseService],
-        exports: [supabase_service_1.SupabaseService],
+        providers: [supabase_service_1.SupabaseService, supabase_auth_guard_1.SupabaseAuthGuard],
+        exports: [supabase_service_1.SupabaseService, supabase_auth_guard_1.SupabaseAuthGuard],
     })
 ], SupabaseModule);
 //# sourceMappingURL=supabase.module.js.map

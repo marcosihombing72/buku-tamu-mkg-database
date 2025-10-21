@@ -1,25 +1,28 @@
 import { AppModule } from '@/app.module';
 import { NestFactory } from '@nestjs/core';
+import { ExpressAdapter } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+const server = express();
 
-  // jadi /api
-  app.setGlobalPrefix('api');
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
 
   // Security & performance setup
-  const server = app.getHttpAdapter().getInstance();
   server.set('trust proxy', 1);
   app.use(helmet());
   app.use(
     rateLimit({
-      windowMs: 60 * 1000, // 1 menit
-      max: 100, // max 100 request per menit
+      windowMs: 60 * 1000,
+      max: 100,
     }),
   );
+
+  // jadi /api
+  app.setGlobalPrefix('api');
 
   app.enableCors({
     origin: true,
@@ -27,27 +30,26 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Swagger setup
+  // Swagger
   const config = new DocumentBuilder()
-    .setTitle('API Buku Tamu')
-    .setDescription('Dokumentasi API Buku Tamu Digital')
+    .setTitle('Buku Tamu MKG')
+    .setDescription('Buku Tamu MKG')
     .setVersion('1.0')
     .addBearerAuth(
       {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
-        name: 'Authorization',
-        description: 'Masukkan token Supabase di sini',
-        in: 'header',
       },
       'access-token',
     )
     .build();
-
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(3000);
+  await app.init();
 }
+
 bootstrap();
+
+export default server;

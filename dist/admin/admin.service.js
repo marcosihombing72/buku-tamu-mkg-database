@@ -254,20 +254,15 @@ let AdminService = class AdminService {
         const userId = user.id;
         const { data: adminData, error: adminError } = await supabase
             .from('Admin')
-            .select(`
-      ID_Admin, 
-      Peran, 
-      ID_Stasiun
-    `)
+            .select(`ID_Admin, Peran, ID_Stasiun`)
             .eq('ID_Admin', userId)
             .single();
         if (adminError) {
             console.error('Admin data fetch error:', adminError);
             throw new common_1.BadRequestException('Gagal mengambil data admin');
         }
-        if (!adminData) {
+        if (!adminData)
             throw new common_1.NotFoundException('Admin tidak ditemukan');
-        }
         const isSuperadmin = adminData.Peran === 'Superadmin';
         if (!isSuperadmin && filterStasiunId) {
             throw new common_1.ForbiddenException('Anda tidak boleh filter berdasarkan ID Stasiun');
@@ -276,24 +271,26 @@ let AdminService = class AdminService {
             .from('Buku_Tamu')
             .select(`
       ID_Buku_Tamu,
+      ID_Pengunjung,
       ID_Stasiun,
       Tujuan,
       Waktu_Kunjungan,
       Tanda_Tangan,
-      Nama_Depan_Pengunjung,
-      Nama_Belakang_Pengunjung,
-      Email_Pengunjung,
-      No_Telepon_Pengunjung,
-      Asal_Pengunjung,
-      Asal_Instansi,
-      Alamat_Lengkap,
-      Stasiun:ID_Stasiun(Nama_Stasiun)
+      Pengunjung:ID_Pengunjung!inner(
+        Nama_Depan_Pengunjung,
+        Nama_Belakang_Pengunjung,
+        Email_Pengunjung,
+        No_Telepon_Pengunjung,
+        Asal_Pengunjung,
+        Asal_Instansi,
+        Alamat_Lengkap
+      ),
+      Stasiun:ID_Stasiun!inner(Nama_Stasiun)
     `)
             .order('Waktu_Kunjungan', { ascending: false });
         if (!isSuperadmin) {
-            if (!adminData.ID_Stasiun) {
+            if (!adminData.ID_Stasiun)
                 throw new common_1.BadRequestException('Admin tidak memiliki ID_Stasiun');
-            }
             bukuTamuQuery = bukuTamuQuery.eq('ID_Stasiun', adminData.ID_Stasiun);
         }
         else if (filterStasiunId) {
@@ -320,37 +317,25 @@ let AdminService = class AdminService {
                 .gte('Waktu_Kunjungan', now.startOf('month').toISOString())
                 .lte('Waktu_Kunjungan', now.endOf('month').toISOString());
         }
-        const { data: bukuTamuData, error: bukuTamuError } = await bukuTamuQuery;
+        const { data: bukuTamuData, error: bukuTamuError } = (await bukuTamuQuery);
         if (bukuTamuError) {
             console.error('Buku Tamu query error:', bukuTamuError);
             throw new common_1.BadRequestException('Gagal mengambil data Buku Tamu');
         }
-        const stasiunIds = [
-            ...new Set(bukuTamuData.map((item) => item.ID_Stasiun)),
-        ];
-        const { data: stasiunData, error: stasiunError } = await supabase
-            .from('Stasiun')
-            .select('ID_Stasiun, Nama_Stasiun')
-            .in('ID_Stasiun', stasiunIds);
-        if (stasiunError) {
-            console.error('Stasiun query error:', stasiunError);
-            throw new common_1.BadRequestException('Gagal mengambil data Stasiun');
-        }
-        const stasiunMap = new Map(stasiunData.map((s) => [s.ID_Stasiun, s.Nama_Stasiun]));
-        const formattedData = bukuTamuData.map((item) => ({
+        const formattedData = (bukuTamuData || []).map((item) => ({
             ID_Buku_Tamu: item.ID_Buku_Tamu,
             ID_Stasiun: item.ID_Stasiun,
             Tujuan: item.Tujuan,
             Waktu_Kunjungan: (0, dayjs_1.default)(item.Waktu_Kunjungan).format('dddd, D MMMM YYYY, HH.mm'),
             Tanda_Tangan: item.Tanda_Tangan,
-            Nama_Depan_Pengunjung: item.Nama_Depan_Pengunjung,
-            Nama_Belakang_Pengunjung: item.Nama_Belakang_Pengunjung,
-            Email_Pengunjung: item.Email_Pengunjung,
-            No_Telepon_Pengunjung: item.No_Telepon_Pengunjung,
-            Asal_Pengunjung: item.Asal_Pengunjung,
-            Asal_Instansi: item.Asal_Instansi,
-            Alamat_Lengkap: item.Alamat_Lengkap,
-            Nama_Stasiun: stasiunMap.get(item.ID_Stasiun) ?? null,
+            Nama_Depan_Pengunjung: item.Pengunjung?.Nama_Depan_Pengunjung ?? null,
+            Nama_Belakang_Pengunjung: item.Pengunjung?.Nama_Belakang_Pengunjung ?? null,
+            Email_Pengunjung: item.Pengunjung?.Email_Pengunjung ?? null,
+            No_Telepon_Pengunjung: item.Pengunjung?.No_Telepon_Pengunjung ?? null,
+            Asal_Pengunjung: item.Pengunjung?.Asal_Pengunjung ?? null,
+            Asal_Instansi: item.Pengunjung?.Asal_Instansi ?? null,
+            Alamat_Lengkap: item.Pengunjung?.Alamat_Lengkap ?? null,
+            Nama_Stasiun: item.Stasiun?.Nama_Stasiun ?? null,
         }));
         return {
             filter: {
@@ -386,13 +371,15 @@ let AdminService = class AdminService {
       Tujuan,
       Waktu_Kunjungan,
       Tanda_Tangan,
-      Nama_Depan_Pengunjung,
-      Nama_Belakang_Pengunjung,
-      Email_Pengunjung,
-      No_Telepon_Pengunjung,
-      Asal_Pengunjung,
-      Asal_Instansi,
-      Alamat_Lengkap,
+      Pengunjung:ID_Pengunjung(
+        Nama_Depan_Pengunjung,
+        Nama_Belakang_Pengunjung,
+        Email_Pengunjung,
+        No_Telepon_Pengunjung,
+        Asal_Pengunjung,
+        Asal_Instansi,
+        Alamat_Lengkap
+      ),
       Stasiun:ID_Stasiun(Nama_Stasiun)
     `)
             .order('Waktu_Kunjungan', { ascending: false });

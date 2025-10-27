@@ -89,10 +89,9 @@ export class PengunjungService {
 
   //*** Fungsi untuk mengisi buku tamu ***
   async isiBukuTamu(dto: IsiBukuTamuDto, file: Express.Multer.File) {
-    //*** Langkah 1: Dapatkan client Supabase ***
     const supabase = this.supabaseService.getClient();
 
-    //*** Langkah 2: Validasi file tanda tangan ***
+    // Validasi file tanda tangan
     if (!file) {
       throw new BadRequestException('File tanda tangan harus disertakan');
     }
@@ -102,12 +101,11 @@ export class PengunjungService {
         'Format tanda tangan tidak valid, hanya PNG/JPG/JPEG',
       );
     }
-
     if (file.size > 10 * 1024 * 1024) {
       throw new BadRequestException('Ukuran file maksimal 10MB');
     }
 
-    //*** Langkah 3: Upload file tanda tangan ke Supabase Storage ***
+    // Upload tanda-tangan ke storage
     const fileExt = file.originalname.split('.').pop();
     const fileName = `${randomUUID()}.${fileExt}`;
     const { error: uploadError } = await supabase.storage
@@ -123,43 +121,87 @@ export class PengunjungService {
       );
     }
 
-    //*** Langkah 4: Generate waktu kunjungan (wib)***
-    const waktuKunjungan = dayjs()
-      .tz('Asia/Jakarta')
-      .format('YYYY-MM-DD HH:mm:ss');
-
-    //*** Langkah 5: Dapatkan public URL dari file yang diupload ***
+    // Ambil public URL (supabase client getPublicUrl tidak async)
     const {
       data: { publicUrl },
     } = supabase.storage.from('tanda-tangan').getPublicUrl(fileName);
 
-    //*** Langkah 6: Simpan data ke tabel Buku_Tamu ***
-    const { error: insertError } = await supabase.from('Buku_Tamu').insert({
-      Tujuan: dto.tujuan,
-      ID_Stasiun: dto.id_stasiun,
+    // Waktu kunjungan otomatis (WIB) — simpan dalam ISO tanpa offset (misal "2025-10-02 12:45:27")
+    // Kita format ke 'YYYY-MM-DD HH:mm:ss' di timezone 'Asia/Jakarta'
+    const waktuKunjungan = dayjs()
+      .tz('Asia/Jakarta')
+      .format('YYYY-MM-DD HH:mm:ss');
+
+    // Buat entri Pengunjung (gunakan UUID manual sehingga dapat dipakai sebagai FK)
+    const idPengunjung = randomUUID(); // akan menjadi ID_Pengunjung
+
+    const pengunjungPayload = {
+      ID_Pengunjung: idPengunjung,
       Nama_Depan_Pengunjung: dto.Nama_Depan_Pengunjung,
       Nama_Belakang_Pengunjung: dto.Nama_Belakang_Pengunjung || null,
-      Email_Pengunjung: dto.Email_Pengunjung,
-      No_Telepon_Pengunjung: dto.No_Telepon_Pengunjung,
-      Asal_Pengunjung: dto.Asal_Pengunjung,
+      Email_Pengunjung: dto.Email_Pengunjung || null,
+      No_Telepon_Pengunjung: dto.No_Telepon_Pengunjung || null,
+      Asal_Pengunjung: dto.Asal_Pengunjung || null,
       Asal_Instansi: dto.Asal_Instansi || null,
-      Alamat_Lengkap: dto.Alamat_Lengkap,
-      Tanda_Tangan: publicUrl,
-      Waktu_Kunjungan: waktuKunjungan,
-    });
+      Alamat_Lengkap: dto.Alamat_Lengkap || null,
+    };
 
-    if (insertError) {
+    const { error: insertPengunjungError } = await supabase
+      .from('Pengunjung')
+      .insert(pengunjungPayload);
+
+    if (insertPengunjungError) {
+      // jika gagal, hapus file yang sudah terupload untuk cleanup
+      await supabase.storage
+        .from('tanda-tangan')
+        .remove([fileName])
+        .catch(() => {});
       throw new BadRequestException(
-        `Gagal simpan ke Buku_Tamu: ${insertError.message}`,
+        `Gagal simpan data pengunjung: ${insertPengunjungError.message}`,
       );
     }
 
-    //*** Langkah 6: Kembalikan response sukses ***
+    // Simpan entri Buku_Tamu yang mengacu ke Pengunjung
+    const bukuTamuPayload = {
+      ID_Buku_Tamu: randomUUID(), // jika Anda ingin generate sendiri; bisa juga biarkan DB generate jika ada default
+      ID_Pengunjung: idPengunjung,
+      ID_Stasiun: dto.id_stasiun,
+      Tujuan: dto.tujuan,
+      Tanda_Tangan: publicUrl,
+      Waktu_Kunjungan: waktuKunjungan,
+    };
+
+    const { error: insertBukuError } = await supabase
+      .from('Buku_Tamu')
+      .insert(bukuTamuPayload);
+
+    if (insertBukuError) {
+      // jika gagal, bersihkan pengunjung + file
+      try {
+        await supabase
+          .from('Pengunjung')
+          .delete()
+          .eq('ID_Pengunjung', idPengunjung);
+      } catch (error) {
+        // Silently handle error
+      }
+      await supabase.storage
+        .from('tanda-tangan')
+        .remove([fileName])
+        .catch(() => {});
+      throw new BadRequestException(
+        `Gagal simpan ke Buku_Tamu: ${insertBukuError.message}`,
+      );
+    }
+
+    // Return tetap sama (format waktu untuk tampilan)
     return {
       message: 'Data buku tamu berhasil disimpan',
       data: {
         ...dto,
-        waktu_kunjungan: dayjs().format('dddd, D MMMM YYYY, HH.mm'),
+        waktu_kunjungan: dayjs()
+          .tz('Asia/Jakarta')
+          .format('dddd, D MMMM YYYY, HH.mm'),
         tanda_tangan_url: publicUrl,
       },
     };

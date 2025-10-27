@@ -23,6 +23,27 @@ import { UpdateProfileAdminDto } from '@/admin/dto/update-profile-admin.dto';
 
 import { SupabaseUser } from '@/interfaces/supabase-user.interface';
 
+interface BukuTamuWithPengunjung {
+  ID_Buku_Tamu: string;
+  ID_Pengunjung: string;
+  ID_Stasiun: string;
+  Tujuan: string;
+  Waktu_Kunjungan: string;
+  Tanda_Tangan: string;
+  Pengunjung: {
+    Nama_Depan_Pengunjung: string | null;
+    Nama_Belakang_Pengunjung: string | null;
+    Email_Pengunjung: string | null;
+    No_Telepon_Pengunjung: string | null;
+    Asal_Pengunjung: string | null;
+    Asal_Instansi: string | null;
+    Alamat_Lengkap: string | null;
+  } | null;
+  Stasiun: {
+    Nama_Stasiun: string | null;
+  } | null;
+}
+
 @Injectable()
 export class AdminService {
   constructor(private readonly supabaseService: SupabaseService) {}
@@ -356,21 +377,14 @@ export class AdminService {
     endDate?: string,
     filterStasiunId?: string,
   ) {
-    // *** Langkah 1: Dapatkan client Supabase ***
+    //*** Langkah 1: Dapatkan client Supabase ***
     const supabase = this.supabaseService.getClient();
-
     const userId = user.id;
 
-    // *** Langkah 2: Ambil data admin dari tabel Admin ***
+    //*** Langkah 2: Ambil data admin untuk cek peran dan ID_Stasiun ***
     const { data: adminData, error: adminError } = await supabase
       .from('Admin')
-      .select(
-        `
-      ID_Admin, 
-      Peran, 
-      ID_Stasiun
-    `,
-      )
+      .select(`ID_Admin, Peran, ID_Stasiun`)
       .eq('ID_Admin', userId)
       .single();
 
@@ -378,53 +392,49 @@ export class AdminService {
       console.error('Admin data fetch error:', adminError);
       throw new BadRequestException('Gagal mengambil data admin');
     }
-
-    if (!adminData) {
-      throw new NotFoundException('Admin tidak ditemukan');
-    }
-
+    if (!adminData) throw new NotFoundException('Admin tidak ditemukan');
     const isSuperadmin = adminData.Peran === 'Superadmin';
-
-    // Validasi filterStasiunId untuk admin biasa
     if (!isSuperadmin && filterStasiunId) {
       throw new ForbiddenException(
         'Anda tidak boleh filter berdasarkan ID Stasiun',
       );
     }
 
-    // *** Langkah 3: Bangun query Buku_Tamu dengan filter ***
+    //*** Langkah 3: Bangun query Buku_Tamu dengan filter yang diberikan ***
     let bukuTamuQuery = supabase
       .from('Buku_Tamu')
       .select(
         `
       ID_Buku_Tamu,
+      ID_Pengunjung,
       ID_Stasiun,
       Tujuan,
       Waktu_Kunjungan,
       Tanda_Tangan,
-      Nama_Depan_Pengunjung,
-      Nama_Belakang_Pengunjung,
-      Email_Pengunjung,
-      No_Telepon_Pengunjung,
-      Asal_Pengunjung,
-      Asal_Instansi,
-      Alamat_Lengkap,
-      Stasiun:ID_Stasiun(Nama_Stasiun)
+      Pengunjung:ID_Pengunjung!inner(
+        Nama_Depan_Pengunjung,
+        Nama_Belakang_Pengunjung,
+        Email_Pengunjung,
+        No_Telepon_Pengunjung,
+        Asal_Pengunjung,
+        Asal_Instansi,
+        Alamat_Lengkap
+      ),
+      Stasiun:ID_Stasiun!inner(Nama_Stasiun)
     `,
       )
       .order('Waktu_Kunjungan', { ascending: false });
 
-    // *** Langkah 4: Filter berdasarkan peran ***
+    //*** Langkah 4: Filter berdasarkan peran admin ***
     if (!isSuperadmin) {
-      if (!adminData.ID_Stasiun) {
+      if (!adminData.ID_Stasiun)
         throw new BadRequestException('Admin tidak memiliki ID_Stasiun');
-      }
       bukuTamuQuery = bukuTamuQuery.eq('ID_Stasiun', adminData.ID_Stasiun);
     } else if (filterStasiunId) {
       bukuTamuQuery = bukuTamuQuery.eq('ID_Stasiun', filterStasiunId);
     }
 
-    // *** Langkah 5: Filter tanggal / periode ***
+    //*** Langkah 5: Filter berdasarkan periode atau rentang tanggal ***
     const now = dayjs();
     if (startDate && endDate) {
       bukuTamuQuery = bukuTamuQuery
@@ -444,33 +454,18 @@ export class AdminService {
         .lte('Waktu_Kunjungan', now.endOf('month').toISOString());
     }
 
-    // *** Langkah 6: Eksekusi query ***
-    const { data: bukuTamuData, error: bukuTamuError } = await bukuTamuQuery;
+    const { data: bukuTamuData, error: bukuTamuError } =
+      (await bukuTamuQuery) as unknown as {
+        data: BukuTamuWithPengunjung[] | null;
+        error?: any;
+      };
     if (bukuTamuError) {
       console.error('Buku Tamu query error:', bukuTamuError);
       throw new BadRequestException('Gagal mengambil data Buku Tamu');
     }
 
-    // *** Langkah 7: Ambil daftar nama stasiun ***
-    const stasiunIds = [
-      ...new Set(bukuTamuData.map((item) => item.ID_Stasiun)),
-    ];
-    const { data: stasiunData, error: stasiunError } = await supabase
-      .from('Stasiun')
-      .select('ID_Stasiun, Nama_Stasiun')
-      .in('ID_Stasiun', stasiunIds);
-
-    if (stasiunError) {
-      console.error('Stasiun query error:', stasiunError);
-      throw new BadRequestException('Gagal mengambil data Stasiun');
-    }
-
-    const stasiunMap = new Map(
-      stasiunData.map((s) => [s.ID_Stasiun, s.Nama_Stasiun]),
-    );
-
-    // *** Langkah 8: Format hasil ***
-    const formattedData = bukuTamuData.map((item) => ({
+    //*** Langkah 6: Format data untuk response ***
+    const formattedData = (bukuTamuData || []).map((item) => ({
       ID_Buku_Tamu: item.ID_Buku_Tamu,
       ID_Stasiun: item.ID_Stasiun,
       Tujuan: item.Tujuan,
@@ -478,17 +473,18 @@ export class AdminService {
         'dddd, D MMMM YYYY, HH.mm',
       ),
       Tanda_Tangan: item.Tanda_Tangan,
-      Nama_Depan_Pengunjung: item.Nama_Depan_Pengunjung,
-      Nama_Belakang_Pengunjung: item.Nama_Belakang_Pengunjung,
-      Email_Pengunjung: item.Email_Pengunjung,
-      No_Telepon_Pengunjung: item.No_Telepon_Pengunjung,
-      Asal_Pengunjung: item.Asal_Pengunjung,
-      Asal_Instansi: item.Asal_Instansi,
-      Alamat_Lengkap: item.Alamat_Lengkap,
-      Nama_Stasiun: stasiunMap.get(item.ID_Stasiun) ?? null,
+      Nama_Depan_Pengunjung: item.Pengunjung?.Nama_Depan_Pengunjung ?? null,
+      Nama_Belakang_Pengunjung:
+        item.Pengunjung?.Nama_Belakang_Pengunjung ?? null,
+      Email_Pengunjung: item.Pengunjung?.Email_Pengunjung ?? null,
+      No_Telepon_Pengunjung: item.Pengunjung?.No_Telepon_Pengunjung ?? null,
+      Asal_Pengunjung: item.Pengunjung?.Asal_Pengunjung ?? null,
+      Asal_Instansi: item.Pengunjung?.Asal_Instansi ?? null,
+      Alamat_Lengkap: item.Pengunjung?.Alamat_Lengkap ?? null,
+      Nama_Stasiun: item.Stasiun?.Nama_Stasiun ?? null,
     }));
 
-    // *** Langkah 9: Return hasil ***
+    //*** Langkah 7: Kembalikan response ***
     return {
       filter: {
         period: period || null,
@@ -515,7 +511,7 @@ export class AdminService {
 
     const userId = user.id;
 
-    // *** Langkah 2: Ambil data admin dari tabel Admin ***
+    // *** Langkah 2: Ambil data admin ***
     const { data: adminData, error: adminError } = await supabase
       .from('Admin')
       .select('Peran, ID_Stasiun')
@@ -528,7 +524,7 @@ export class AdminService {
 
     const isSuperadmin = adminData.Peran === 'Superadmin';
 
-    // *** Langkah 3: Bangun query Buku_Tamu ***
+    // *** Langkah 3: Query Buku_Tamu ***
     let bukuTamuQuery = supabase
       .from('Buku_Tamu')
       .select(
@@ -538,13 +534,15 @@ export class AdminService {
       Tujuan,
       Waktu_Kunjungan,
       Tanda_Tangan,
-      Nama_Depan_Pengunjung,
-      Nama_Belakang_Pengunjung,
-      Email_Pengunjung,
-      No_Telepon_Pengunjung,
-      Asal_Pengunjung,
-      Asal_Instansi,
-      Alamat_Lengkap,
+      Pengunjung:ID_Pengunjung(
+        Nama_Depan_Pengunjung,
+        Nama_Belakang_Pengunjung,
+        Email_Pengunjung,
+        No_Telepon_Pengunjung,
+        Asal_Pengunjung,
+        Asal_Instansi,
+        Alamat_Lengkap
+      ),
       Stasiun:ID_Stasiun(Nama_Stasiun)
     `,
       )
@@ -558,7 +556,7 @@ export class AdminService {
       bukuTamuQuery = bukuTamuQuery.eq('ID_Stasiun', adminData.ID_Stasiun);
     }
 
-    // *** Langkah 5: Filter berdasarkan periode ***
+    // *** Langkah 5: Filter periode ***
     const now = dayjs();
 
     if (period === 'today') {
@@ -577,7 +575,7 @@ export class AdminService {
       throw new BadRequestException('Periode filter tidak valid');
     }
 
-    // *** Langkah 6: Eksekusi query ***
+    // *** Langkah 6: Eksekusi ***
     const { data, error } = await bukuTamuQuery;
     if (error) {
       throw new BadRequestException(
@@ -585,7 +583,7 @@ export class AdminService {
       );
     }
 
-    // *** Langkah 7: Format hasil ***
+    // *** Langkah 7: Mapping waktu ***
     const formattedData =
       data?.map((item) => ({
         ...item,

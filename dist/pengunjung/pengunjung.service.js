@@ -96,31 +96,64 @@ let PengunjungService = class PengunjungService {
         if (uploadError) {
             throw new common_1.BadRequestException(`Gagal upload tanda tangan: ${uploadError.message}`);
         }
+        const { data: { publicUrl }, } = supabase.storage.from('tanda-tangan').getPublicUrl(fileName);
         const waktuKunjungan = (0, dayjs_1.default)()
             .tz('Asia/Jakarta')
             .format('YYYY-MM-DD HH:mm:ss');
-        const { data: { publicUrl }, } = supabase.storage.from('tanda-tangan').getPublicUrl(fileName);
-        const { error: insertError } = await supabase.from('Buku_Tamu').insert({
-            Tujuan: dto.tujuan,
-            ID_Stasiun: dto.id_stasiun,
+        const idPengunjung = (0, crypto_1.randomUUID)();
+        const pengunjungPayload = {
+            ID_Pengunjung: idPengunjung,
             Nama_Depan_Pengunjung: dto.Nama_Depan_Pengunjung,
             Nama_Belakang_Pengunjung: dto.Nama_Belakang_Pengunjung || null,
-            Email_Pengunjung: dto.Email_Pengunjung,
-            No_Telepon_Pengunjung: dto.No_Telepon_Pengunjung,
-            Asal_Pengunjung: dto.Asal_Pengunjung,
+            Email_Pengunjung: dto.Email_Pengunjung || null,
+            No_Telepon_Pengunjung: dto.No_Telepon_Pengunjung || null,
+            Asal_Pengunjung: dto.Asal_Pengunjung || null,
             Asal_Instansi: dto.Asal_Instansi || null,
-            Alamat_Lengkap: dto.Alamat_Lengkap,
+            Alamat_Lengkap: dto.Alamat_Lengkap || null,
+        };
+        const { error: insertPengunjungError } = await supabase
+            .from('Pengunjung')
+            .insert(pengunjungPayload);
+        if (insertPengunjungError) {
+            await supabase.storage
+                .from('tanda-tangan')
+                .remove([fileName])
+                .catch(() => { });
+            throw new common_1.BadRequestException(`Gagal simpan data pengunjung: ${insertPengunjungError.message}`);
+        }
+        const bukuTamuPayload = {
+            ID_Buku_Tamu: (0, crypto_1.randomUUID)(),
+            ID_Pengunjung: idPengunjung,
+            ID_Stasiun: dto.id_stasiun,
+            Tujuan: dto.tujuan,
             Tanda_Tangan: publicUrl,
             Waktu_Kunjungan: waktuKunjungan,
-        });
-        if (insertError) {
-            throw new common_1.BadRequestException(`Gagal simpan ke Buku_Tamu: ${insertError.message}`);
+        };
+        const { error: insertBukuError } = await supabase
+            .from('Buku_Tamu')
+            .insert(bukuTamuPayload);
+        if (insertBukuError) {
+            try {
+                await supabase
+                    .from('Pengunjung')
+                    .delete()
+                    .eq('ID_Pengunjung', idPengunjung);
+            }
+            catch (error) {
+            }
+            await supabase.storage
+                .from('tanda-tangan')
+                .remove([fileName])
+                .catch(() => { });
+            throw new common_1.BadRequestException(`Gagal simpan ke Buku_Tamu: ${insertBukuError.message}`);
         }
         return {
             message: 'Data buku tamu berhasil disimpan',
             data: {
                 ...dto,
-                waktu_kunjungan: (0, dayjs_1.default)().format('dddd, D MMMM YYYY, HH.mm'),
+                waktu_kunjungan: (0, dayjs_1.default)()
+                    .tz('Asia/Jakarta')
+                    .format('dddd, D MMMM YYYY, HH.mm'),
                 tanda_tangan_url: publicUrl,
             },
         };

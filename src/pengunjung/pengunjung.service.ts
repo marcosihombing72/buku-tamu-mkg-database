@@ -126,14 +126,13 @@ export class PengunjungService {
       data: { publicUrl },
     } = supabase.storage.from('tanda-tangan').getPublicUrl(fileName);
 
-    // Waktu kunjungan otomatis (WIB) — simpan dalam ISO tanpa offset (misal "2025-10-02 12:45:27")
-    // Kita format ke 'YYYY-MM-DD HH:mm:ss' di timezone 'Asia/Jakarta'
+    // format 'YYYY-MM-DD HH:mm:ss' di timezone 'Asia/Jakarta'
     const waktuKunjungan = dayjs()
       .tz('Asia/Jakarta')
       .format('YYYY-MM-DD HH:mm:ss');
 
-    // Buat entri Pengunjung (gunakan UUID manual sehingga dapat dipakai sebagai FK)
-    const idPengunjung = randomUUID(); // akan menjadi ID_Pengunjung
+    // Buat entri Pengunjung
+    const idPengunjung = randomUUID();
 
     const pengunjungPayload = {
       ID_Pengunjung: idPengunjung,
@@ -146,24 +145,59 @@ export class PengunjungService {
       Alamat_Lengkap: dto.Alamat_Lengkap || null,
     };
 
-    const { error: insertPengunjungError } = await supabase
-      .from('Pengunjung')
-      .insert(pengunjungPayload);
+    if (dto.Email_Pengunjung) {
+      const { data: existing, error: checkError } = await supabase
+        .from('Pengunjung')
+        .select('ID_Pengunjung')
+        .eq('Email_Pengunjung', dto.Email_Pengunjung)
+        .maybeSingle();
 
-    if (insertPengunjungError) {
-      // jika gagal, hapus file yang sudah terupload untuk cleanup
-      await supabase.storage
-        .from('tanda-tangan')
-        .remove([fileName])
-        .catch(() => {});
-      throw new BadRequestException(
-        `Gagal simpan data pengunjung: ${insertPengunjungError.message}`,
-      );
+      if (checkError) {
+        throw new BadRequestException(
+          `Gagal memeriksa data pengunjung: ${checkError.message}`,
+        );
+      }
+
+      if (existing) {
+        // Jika email sudah ada, gunakan ID_Pengunjung lama
+        pengunjungPayload.ID_Pengunjung = existing.ID_Pengunjung;
+      } else {
+        // Jika belum ada, baru insert data baru
+        const { error: insertPengunjungError } = await supabase
+          .from('Pengunjung')
+          .insert(pengunjungPayload);
+
+        if (insertPengunjungError) {
+          // jika gagal, hapus file tanda tangan yang sudah diupload
+          await supabase.storage
+            .from('tanda-tangan')
+            .remove([fileName])
+            .catch(() => {});
+          throw new BadRequestException(
+            `Gagal simpan data pengunjung: ${insertPengunjungError.message}`,
+          );
+        }
+      }
+    } else {
+      // Jika tidak ada email (kosong), langsung insert
+      const { error: insertPengunjungError } = await supabase
+        .from('Pengunjung')
+        .insert(pengunjungPayload);
+
+      if (insertPengunjungError) {
+        await supabase.storage
+          .from('tanda-tangan')
+          .remove([fileName])
+          .catch(() => {});
+        throw new BadRequestException(
+          `Gagal simpan data pengunjung: ${insertPengunjungError.message}`,
+        );
+      }
     }
 
-    // Simpan entri Buku_Tamu yang mengacu ke Pengunjung
+    // Simpan entri Buku_Tamu
     const bukuTamuPayload = {
-      ID_Buku_Tamu: randomUUID(), // jika Anda ingin generate sendiri; bisa juga biarkan DB generate jika ada default
+      ID_Buku_Tamu: randomUUID(),
       ID_Pengunjung: idPengunjung,
       ID_Stasiun: dto.id_stasiun,
       Tujuan: dto.tujuan,

@@ -111,15 +111,42 @@ let PengunjungService = class PengunjungService {
             Asal_Instansi: dto.Asal_Instansi || null,
             Alamat_Lengkap: dto.Alamat_Lengkap || null,
         };
-        const { error: insertPengunjungError } = await supabase
-            .from('Pengunjung')
-            .insert(pengunjungPayload);
-        if (insertPengunjungError) {
-            await supabase.storage
-                .from('tanda-tangan')
-                .remove([fileName])
-                .catch(() => { });
-            throw new common_1.BadRequestException(`Gagal simpan data pengunjung: ${insertPengunjungError.message}`);
+        if (dto.Email_Pengunjung) {
+            const { data: existing, error: checkError } = await supabase
+                .from('Pengunjung')
+                .select('ID_Pengunjung')
+                .eq('Email_Pengunjung', dto.Email_Pengunjung)
+                .maybeSingle();
+            if (checkError) {
+                throw new common_1.BadRequestException(`Gagal memeriksa data pengunjung: ${checkError.message}`);
+            }
+            if (existing) {
+                pengunjungPayload.ID_Pengunjung = existing.ID_Pengunjung;
+            }
+            else {
+                const { error: insertPengunjungError } = await supabase
+                    .from('Pengunjung')
+                    .insert(pengunjungPayload);
+                if (insertPengunjungError) {
+                    await supabase.storage
+                        .from('tanda-tangan')
+                        .remove([fileName])
+                        .catch(() => { });
+                    throw new common_1.BadRequestException(`Gagal simpan data pengunjung: ${insertPengunjungError.message}`);
+                }
+            }
+        }
+        else {
+            const { error: insertPengunjungError } = await supabase
+                .from('Pengunjung')
+                .insert(pengunjungPayload);
+            if (insertPengunjungError) {
+                await supabase.storage
+                    .from('tanda-tangan')
+                    .remove([fileName])
+                    .catch(() => { });
+                throw new common_1.BadRequestException(`Gagal simpan data pengunjung: ${insertPengunjungError.message}`);
+            }
         }
         const bukuTamuPayload = {
             ID_Buku_Tamu: (0, crypto_1.randomUUID)(),

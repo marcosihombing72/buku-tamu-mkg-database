@@ -53,7 +53,7 @@ export class AdminService {
     //*** Langkah 1: Dapatkan client Supabase ***
     const supabase = this.supabaseService.getClient();
 
-    //*** Langkah 2: Login Supabase ***
+    //*** Langkah 2: Login ke Supabase Auth ***
     const { data: loginData, error: loginError } =
       await supabase.auth.signInWithPassword({
         email: dto.email,
@@ -88,8 +88,37 @@ export class AdminService {
 
     if (adminError || !adminData) {
       throw new BadRequestException(
-        `Gagal ambil data admin: ${adminError?.message}`,
+        `Gagal ambil data admin: ${adminError?.message || 'Data admin tidak ditemukan'}`,
       );
+    }
+
+    //*** Langkah 4: Validasi konsistensi ID_Stasiun dengan peran ***
+    const { ID_Stasiun, Peran } = adminData;
+
+    if (ID_Stasiun) {
+      const { data: stasiunData, error: stasiunError } = await supabaseAdmin
+        .from('Stasiun')
+        .select('ID_Stasiun')
+        .eq('ID_Stasiun', ID_Stasiun)
+        .single();
+
+      if (stasiunError || !stasiunData) {
+        throw new BadRequestException(
+          `ID_Stasiun tidak valid atau tidak ditemukan di tabel Stasiun.`,
+        );
+      }
+
+      if (Peran !== 'Admin') {
+        throw new BadRequestException(
+          `Peran tidak sesuai. Akun dengan ID_Stasiun harus berperan sebagai Admin.`,
+        );
+      }
+    } else {
+      if (Peran !== 'Superadmin') {
+        throw new BadRequestException(
+          `Peran tidak sesuai. Akun tanpa ID_Stasiun harus berperan sebagai Superadmin.`,
+        );
+      }
     }
 
     //*** Langkah 4: Kembalikan response ***

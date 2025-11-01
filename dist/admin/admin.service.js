@@ -50,7 +50,26 @@ let AdminService = class AdminService {
             .eq('Email_Admin', dto.email)
             .single();
         if (adminError || !adminData) {
-            throw new common_1.BadRequestException(`Gagal ambil data admin: ${adminError?.message}`);
+            throw new common_1.BadRequestException(`Gagal ambil data admin: ${adminError?.message || 'Data admin tidak ditemukan'}`);
+        }
+        const { ID_Stasiun, Peran } = adminData;
+        if (ID_Stasiun) {
+            const { data: stasiunData, error: stasiunError } = await supabaseAdmin
+                .from('Stasiun')
+                .select('ID_Stasiun')
+                .eq('ID_Stasiun', ID_Stasiun)
+                .single();
+            if (stasiunError || !stasiunData) {
+                throw new common_1.BadRequestException(`ID_Stasiun tidak valid atau tidak ditemukan di tabel Stasiun.`);
+            }
+            if (Peran !== 'Admin') {
+                throw new common_1.BadRequestException(`Peran tidak sesuai. Akun dengan ID_Stasiun harus berperan sebagai Admin.`);
+            }
+        }
+        else {
+            if (Peran !== 'Superadmin') {
+                throw new common_1.BadRequestException(`Peran tidak sesuai. Akun tanpa ID_Stasiun harus berperan sebagai Superadmin.`);
+            }
         }
         return {
             message: 'Login berhasil',

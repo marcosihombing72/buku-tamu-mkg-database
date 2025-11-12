@@ -7,10 +7,10 @@ const app_module_1 = require("./app.module");
 const core_1 = require("@nestjs/core");
 const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
+const cors_1 = __importDefault(require("cors"));
 const express_1 = __importDefault(require("express"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const helmet_1 = __importDefault(require("helmet"));
-const cors_1 = __importDefault(require("cors"));
 const server = (0, express_1.default)();
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule, new platform_express_1.ExpressAdapter(server));
@@ -31,6 +31,7 @@ async function bootstrap() {
         methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
         credentials: true,
     }));
+    server.options('*', (0, cors_1.default)({ origin: true, credentials: true }));
     const config = new swagger_1.DocumentBuilder()
         .setTitle('Buku Tamu MKG')
         .setDescription('Buku Tamu MKG')

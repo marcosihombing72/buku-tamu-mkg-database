@@ -2,10 +2,10 @@ import { AppModule } from '@/app.module';
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cors from 'cors';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
-import cors from 'cors';
 
 const server = express();
 
@@ -31,14 +31,15 @@ async function bootstrap() {
     credentials: true,
   });
 
-server.use(
-  cors({
-    origin: true,
-    methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
-    credentials: true,
-  }),
-);
+  server.use(
+    cors({
+      origin: true,
+      methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+      credentials: true,
+    }),
+  );
 
+  server.options('*', cors({ origin: true, credentials: true }));
 
   // Swagger
   const config = new DocumentBuilder()

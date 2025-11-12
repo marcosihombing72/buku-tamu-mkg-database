@@ -1,6 +1,5 @@
 import { CanActivate, ExecutionContext } from '@nestjs/common';
 import { AdminService } from '@/admin/admin.service';
-import { CreateAdminDto } from '@/admin/dto/createadmin.dto';
 import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
 import { ResetPasswordAdminDto } from '@/admin/dto/reset-password-admin.dto';
 import { UpdateProfileAdminDto } from '@/admin/dto/update-profile-admin.dto';
@@ -104,7 +103,7 @@ export declare class AdminController {
     }>;
     createAdmin(req: {
         user: SupabaseUser;
-    }, dto: CreateAdminDto, foto: Express.Multer.File, user_id: string): Promise<{
+    }, user_id: string, body: any, foto?: Express.Multer.File): Promise<{
         message: string;
         id: string;
         email: any;

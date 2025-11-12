@@ -29,7 +29,6 @@ import {
 } from '@nestjs/swagger';
 
 import { AdminService } from '@/admin/admin.service';
-import { CreateAdminDto } from '@/admin/dto/createadmin.dto';
 import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
 import { ResetPasswordAdminDto } from '@/admin/dto/reset-password-admin.dto';
 import { UpdateProfileAdminDto } from '@/admin/dto/update-profile-admin.dto';
@@ -242,14 +241,48 @@ export class AdminController {
     schema: {
       type: 'object',
       properties: {
-        nama_depan: { type: 'string' },
-        nama_belakang: { type: 'string' },
-        email: { type: 'string' },
-        password: { type: 'string' },
-        confirmPassword: { type: 'string' },
-        peran: { type: 'string', enum: ['Admin', 'Superadmin'] },
-        id_stasiun: { type: 'string' },
-        foto: { type: 'string', format: 'binary' },
+        nama_depan: {
+          type: 'string',
+          example: 'Budi',
+          description: 'Nama depan admin (wajib)',
+        },
+        nama_belakang: {
+          type: 'string',
+          example: 'Santoso',
+          description: 'Nama belakang admin (opsional)',
+        },
+        email: {
+          type: 'string',
+          example: 'admin@example.com',
+          description: 'Email admin (wajib)',
+        },
+        password: {
+          type: 'string',
+          example: 'password123',
+          description: 'Password minimal 6 karakter (wajib)',
+        },
+        confirmPassword: {
+          type: 'string',
+          example: 'password123',
+          description: 'Konfirmasi password harus sama (wajib)',
+        },
+        peran: {
+          type: 'string',
+          enum: ['Admin', 'Superadmin'],
+          example: 'Admin',
+          description: 'Peran pengguna (Admin / Superadmin)',
+        },
+        id_stasiun: {
+          type: 'string',
+          example: 'ST123',
+          description: 'ID Stasiun (wajib jika peran = Admin)',
+        },
+        foto: {
+          type: 'string',
+          format: 'binary',
+          description:
+            'Foto admin opsional (default Logo_BMKG.png jika tidak diunggah)',
+        },
       },
       required: ['nama_depan', 'email', 'password', 'confirmPassword', 'peran'],
     },
@@ -258,9 +291,9 @@ export class AdminController {
   @Post('create-admin')
   async createAdmin(
     @Request() req: { user: SupabaseUser },
-    @Body() dto: CreateAdminDto,
-    @UploadedFile() foto: Express.Multer.File,
     @Headers('user_id') user_id: string,
+    @Body() body: any, // tidak pakai DTO
+    @UploadedFile() foto?: Express.Multer.File,
   ) {
     const user = req.user;
 
@@ -268,7 +301,7 @@ export class AdminController {
       throw new BadRequestException('User tidak ditemukan dalam request');
     }
 
-    return this.adminService.createAdmin(dto, foto, user, user_id);
+    return this.adminService.createAdmin(body, foto, user, user_id);
   }
 
   @ApiBearerAuth('access-token')

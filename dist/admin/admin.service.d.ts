@@ -83,7 +83,7 @@ export declare class AdminService {
             }[];
         }[];
     }>;
-    createAdmin(body: any, foto: Express.Multer.File, user: SupabaseUser, user_id: string): Promise<{
+    createAdmin(body: any, foto?: Express.Multer.File, user?: SupabaseUser, user_id?: string): Promise<{
         message: string;
         id: string;
         email: any;

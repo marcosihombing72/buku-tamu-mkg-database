@@ -730,10 +730,10 @@ export class AdminService {
 
   //*** Fungsi untuk menambahkan admin baru (hanya untuk Superadmin) ***
   async createAdmin(
-    body: any, // tidak pakai DTO lagi
-    foto: Express.Multer.File,
-    user: SupabaseUser,
-    user_id: string,
+    body: any,
+    foto?: Express.Multer.File,
+    user?: SupabaseUser,
+    user_id?: string,
   ) {
     const {
       nama_depan,

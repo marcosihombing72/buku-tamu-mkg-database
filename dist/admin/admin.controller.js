@@ -17,7 +17,6 @@ const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
 const admin_service_1 = require("./admin.service");
-const createadmin_dto_1 = require("./dto/createadmin.dto");
 const login_admin_dto_1 = require("./dto/login-admin.dto");
 const reset_password_admin_dto_1 = require("./dto/reset-password-admin.dto");
 const update_profile_admin_dto_1 = require("./dto/update-profile-admin.dto");
@@ -87,12 +86,12 @@ let AdminController = class AdminController {
         const user = req.user;
         return this.adminService.getAllAdmins(user, user_id, search, filterPeran, filterStasiunId);
     }
-    async createAdmin(req, dto, foto, user_id) {
+    async createAdmin(req, user_id, body, foto) {
         const user = req.user;
         if (!user) {
             throw new common_1.BadRequestException('User tidak ditemukan dalam request');
         }
-        return this.adminService.createAdmin(dto, foto, user, user_id);
+        return this.adminService.createAdmin(body, foto, user, user_id);
     }
     async updateAdmin(req, dto, foto, id_admin, user_id) {
         const user = req.user;
@@ -263,14 +262,47 @@ __decorate([
         schema: {
             type: 'object',
             properties: {
-                nama_depan: { type: 'string' },
-                nama_belakang: { type: 'string' },
-                email: { type: 'string' },
-                password: { type: 'string' },
-                confirmPassword: { type: 'string' },
-                peran: { type: 'string', enum: ['Admin', 'Superadmin'] },
-                id_stasiun: { type: 'string' },
-                foto: { type: 'string', format: 'binary' },
+                nama_depan: {
+                    type: 'string',
+                    example: 'Budi',
+                    description: 'Nama depan admin (wajib)',
+                },
+                nama_belakang: {
+                    type: 'string',
+                    example: 'Santoso',
+                    description: 'Nama belakang admin (opsional)',
+                },
+                email: {
+                    type: 'string',
+                    example: 'admin@example.com',
+                    description: 'Email admin (wajib)',
+                },
+                password: {
+                    type: 'string',
+                    example: 'password123',
+                    description: 'Password minimal 6 karakter (wajib)',
+                },
+                confirmPassword: {
+                    type: 'string',
+                    example: 'password123',
+                    description: 'Konfirmasi password harus sama (wajib)',
+                },
+                peran: {
+                    type: 'string',
+                    enum: ['Admin', 'Superadmin'],
+                    example: 'Admin',
+                    description: 'Peran pengguna (Admin / Superadmin)',
+                },
+                id_stasiun: {
+                    type: 'string',
+                    example: 'ST123',
+                    description: 'ID Stasiun (wajib jika peran = Admin)',
+                },
+                foto: {
+                    type: 'string',
+                    format: 'binary',
+                    description: 'Foto admin opsional (default Logo_BMKG.png jika tidak diunggah)',
+                },
             },
             required: ['nama_depan', 'email', 'password', 'confirmPassword', 'peran'],
         },
@@ -278,11 +310,11 @@ __decorate([
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('foto')),
     (0, common_1.Post)('create-admin'),
     __param(0, (0, common_1.Request)()),
-    __param(1, (0, common_1.Body)()),
-    __param(2, (0, common_1.UploadedFile)()),
-    __param(3, (0, common_1.Headers)('user_id')),
+    __param(1, (0, common_1.Headers)('user_id')),
+    __param(2, (0, common_1.Body)()),
+    __param(3, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, createadmin_dto_1.CreateAdminDto, Object, String]),
+    __metadata("design:paramtypes", [Object, String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "createAdmin", null);
 __decorate([

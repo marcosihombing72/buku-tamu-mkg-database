@@ -4,10 +4,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 
-let app; // deklarasi di luar
-
-async function bootstrap() {
-  app = await NestFactory.create(AppModule);
+async function createApp() {
+  const app = await NestFactory.create(AppModule);
 
   app.use(helmet());
   app.use(
@@ -20,7 +18,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   app.enableCors({
-    origin: '*', // bisa diganti dengan allowed origins
+    origin: '*', // development / testing
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     credentials: true,
   });
@@ -39,8 +37,7 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   await app.init();
+  return app;
 }
 
-bootstrap();
-
-export default app;
+export default createApp();

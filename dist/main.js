@@ -14,7 +14,7 @@ async function bootstrap() {
     app.use((0, express_rate_limit_1.default)({ windowMs: 60 * 1000, max: 100 }));
     app.setGlobalPrefix('api');
     app.enableCors({
-        origin: ['https://admin-buku-tamu-mkg.vercel.app', 'http://localhost:3000'],
+        origin: '*',
         methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
         credentials: true,
     });

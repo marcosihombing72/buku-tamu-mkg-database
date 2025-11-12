@@ -15,7 +15,7 @@ async function bootstrap() {
 
   // ✅ Enable CORS di Nest
   app.enableCors({
-    origin: ['https://admin-buku-tamu-mkg.vercel.app', 'http://localhost:3000'], // whitelist frontend
+    origin: '*',
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     credentials: true,
   });

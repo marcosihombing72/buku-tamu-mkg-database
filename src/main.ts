@@ -1,75 +1,90 @@
-import { AppModule } from '@/app.module';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import express from 'express';
-import rateLimit from 'express-rate-limit';
-import helmet from 'helmet';
+import 'dotenv/config';
+import express, { json, urlencoded } from 'express';
+import swaggerUi from 'swagger-ui-express';
+import { AppModule } from './app.module';
 
 const server = express();
 
-async function bootstrap() {
-  // 🔹 Gunakan ExpressAdapter agar kompatibel dengan Vercel
-  const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
+let nestAppPromise: Promise<INestApplication> | null = null;
 
-  // Security & rate limit
-  app.use(helmet());
-  app.use(
-    rateLimit({
-      windowMs: 60 * 1000, // 1 menit
-      max: 100, // max 100 request per IP
-    }),
-  );
+export async function createNestApp() {
+  if (!nestAppPromise) {
+    nestAppPromise = (async () => {
+      const app = await NestFactory.create(
+        AppModule,
+        new ExpressAdapter(server),
+      );
 
-  // Prefix semua route
-  app.setGlobalPrefix('api');
+      app.setGlobalPrefix('api');
 
-  // ✅ Aktifkan CORS langsung di NestJS
-  app.enableCors({
-    origin: (origin, callback) => {
-      const allowedOrigins = [
-        'http://localhost:3000',
-        'https://admin-buku-tamu-mkg.vercel.app',
-      ];
+      app.enableCors({
+        origin: '*',
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+        credentials: true,
+      });
 
-      // Izinkan tools tanpa origin (Postman, curl)
-      if (!origin) return callback(null, true);
+      app.useGlobalPipes(
+        new ValidationPipe({
+          whitelist: true,
+          forbidNonWhitelisted: false,
+          transform: true,
+        }),
+      );
 
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.warn(`❌ Blocked by CORS: ${origin}`);
-        callback(new Error('Not allowed by CORS'));
+      if (process.env.LOCAL === 'true') {
+        const config = new DocumentBuilder()
+          .setTitle('Dokumentasi API BUKU TAMU BMKG BENGKULU')
+          .setDescription('Dokumentasi API Buku Tamu BMKG Bengkulu')
+          .setVersion('1.0')
+          .addBearerAuth(
+            {
+              type: 'http',
+              scheme: 'bearer',
+              bearerFormat: 'JWT',
+              description: 'Bearer token',
+            },
+            'access-token',
+          )
+          .build();
+
+        const document = SwaggerModule.createDocument(app, config);
+
+        server.use(json({ limit: '10mb' }));
+        server.use(urlencoded({ limit: '10mb', extended: true }));
+        server.use(
+          '/api',
+          swaggerUi.serve,
+          swaggerUi.setup(document, {
+            customCss: `.topbar { display: none }`,
+            swaggerOptions: {
+              docExpansion: 'none',
+              defaultModelsExpandDepth: -1,
+            },
+          }),
+        );
       }
-    },
-    credentials: true,
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Origin',
-      'X-Requested-With',
-      'Content-Type',
-      'Accept',
-      'Authorization',
-      'access_token',
-      'user_id',
-    ],
-  });
 
-  // Swagger setup
-  const config = new DocumentBuilder()
-    .setTitle('Buku Tamu MKG')
-    .setDescription('Buku Tamu MKG API')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
-
-  // ⚠️ Jangan panggil app.listen() di Vercel
-  await app.init();
+      await app.init();
+      return app;
+    })();
+  }
+  return nestAppPromise;
 }
 
-bootstrap();
+// =====================
+// Local dev server
+// =====================
+if (process.env.LOCAL === 'true') {
+  void createNestApp().then(() => {
+    const port = Number(process.env.PORT) || 3000;
+    server.listen(port, () => {
+      console.log(`🚀 Server running at http://localhost:${port}`);
+    });
+  });
+}
 
-export default server;
+export { server };

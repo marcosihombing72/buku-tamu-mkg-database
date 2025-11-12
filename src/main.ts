@@ -1,50 +1,28 @@
 import { AppModule } from '@/app.module';
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import rateLimit from 'express-rate-limit';
-import helmet from 'helmet';
+import { ExpressAdapter } from '@nestjs/platform-express';
+import cors from 'cors';
+import express from 'express';
+
+const server = express();
+
+// ✅ Middleware CORS untuk Vercel serverless
+server.use(
+  cors({
+    origin: ['https://admin-buku-tamu-mkg.vercel.app', 'http://localhost:3000'],
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    credentials: true,
+  }),
+);
+server.options('*', cors());
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
 
-  // Security & performance
-  app.use(helmet());
-  app.use(
-    rateLimit({
-      windowMs: 60 * 1000, // 1 menit
-      max: 100, // max 100 request / menit
-    }),
-  );
-
-  // Prefix semua route
   app.setGlobalPrefix('api');
 
-  // ✅ Enable CORS untuk frontend tertentu
-  app.enableCors({
-    origin: [
-      'https://admin-buku-tamu-mkg.vercel.app', // production
-      'http://localhost:3000', // development
-    ],
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    credentials: true, // untuk JWT / cookie auth
-  });
-
-  // Swagger setup
-  const config = new DocumentBuilder()
-    .setTitle('Buku Tamu MKG')
-    .setDescription('Buku Tamu MKG API')
-    .setVersion('1.0')
-    .addBearerAuth(
-      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
-      'access-token',
-    )
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
-
-  // Start server
-  await app.listen(process.env.PORT || 3000);
+  return app.init();
 }
 
+export default server;
 bootstrap();

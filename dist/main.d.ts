@@ -1,2 +1,2 @@
-declare const _default: Promise<import("@nestjs/common").INestApplication<any>>;
-export default _default;
+declare const server: import("express-serve-static-core").Express;
+export default server;

@@ -1,28 +1,41 @@
 import { AppModule } from '@/app.module';
 import { NestFactory } from '@nestjs/core';
+import { ExpressAdapter } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 
-async function createApp() {
-  const app = await NestFactory.create(AppModule);
+const server = express();
 
-  app.use(helmet());
-  app.use(
-    rateLimit({
-      windowMs: 60 * 1000,
-      max: 100,
-    }),
-  );
+// ✅ Middleware security & rate limit global
+server.set('trust proxy', 1);
+server.use(helmet());
+server.use(
+  rateLimit({
+    windowMs: 60 * 1000, // 1 menit
+    max: 100, // max 100 request per IP
+  }),
+);
 
+async function bootstrap() {
+  // Gunakan ExpressAdapter untuk serverless Vercel
+  const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
+
+  // ✅ Prefix semua route
   app.setGlobalPrefix('api');
 
+  // ✅ Enable CORS
   app.enableCors({
-    origin: '*', // development / testing
+    origin: [
+      'http://localhost:3000', // development
+      'https://admin-buku-tamu-mkg.vercel.app', // production
+    ],
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    credentials: true,
+    credentials: true, // jika ada cookie / JWT
   });
 
+  // ✅ Swagger
   const config = new DocumentBuilder()
     .setTitle('Buku Tamu MKG')
     .setDescription('Buku Tamu MKG API')
@@ -36,8 +49,10 @@ async function createApp() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
+  // ❌ Jangan pakai app.listen() di Vercel
   await app.init();
-  return app;
 }
 
-export default createApp();
+bootstrap();
+
+export default server;

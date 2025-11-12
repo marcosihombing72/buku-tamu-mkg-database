@@ -659,10 +659,8 @@ export class AdminService {
   ) {
     //*** Langkah 1: Dapatkan client Supabase ***
     const supabase = this.supabaseService.getClient();
-
     const userId = user.id;
 
-    //*** Langkah 2: Ambil data admin saat ini ***
     const { data: currentAdmin, error: currentAdminError } = await supabase
       .from('Admin')
       .select('Peran, ID_Stasiun')
@@ -673,38 +671,40 @@ export class AdminService {
       throw new BadRequestException('Data admin tidak ditemukan');
     }
 
-    //*** Langkah 3: Hanya Superadmin yang bisa akses data semua admin ***
+    //*** Langkah 2: Cek apakah admin adalah Superadmin ***
     if (currentAdmin.Peran !== 'Superadmin') {
       throw new UnauthorizedException(
         'Hanya Superadmin yang bisa mengakses data semua admin',
       );
     }
 
-    //*** Langkah 4: Bangun query dengan fitur pencarian dan filter ***
+    //*** Langkah 3: Bangun query dasar untuk mengambil data admin ***
     let query = supabase.from('Admin').select(
       `
-    ID_Admin,
-    Nama_Depan_Admin,
-    Nama_Belakang_Admin,
-    Email_Admin,
-    Peran,
-    Foto_Admin,
-    Created_At,
-    Stasiun (
-      ID_Stasiun,
-      Nama_Stasiun
-    )
-  `,
+      ID_Admin,
+      Nama_Depan_Admin,
+      Nama_Belakang_Admin,
+      Email_Admin,
+      Peran,
+      Foto_Admin,
+      Created_At,
+      Stasiun (
+        ID_Stasiun,
+        Nama_Stasiun
+      )
+    `,
     );
 
-    //*** Langkah 5: Filter pencarian (nama depan, nama belakang, email, nama stasiun) ***
-    if (search) {
+    //*** Langkah 4: Implementasi fitur pencarian (search) ***
+    if (search && search.trim() !== '') {
+      const keyword = `%${search.trim()}%`;
+
       query = query.or(
-        `Nama_Depan_Admin.ilike.%${search}%,Nama_Belakang_Admin.ilike.%${search}%,Email_Admin.ilike.%${search}%,Stasiun.Nama_Stasiun.ilike.%${search}%`,
+        `Nama_Depan_Admin.ilike.${keyword},Nama_Belakang_Admin.ilike.${keyword},Email_Admin.ilike.${keyword},Stasiun.Nama_Stasiun.ilike.${keyword}`,
       );
     }
 
-    //*** Langkah 6: Filter peran dan ID_Stasiun ***
+    //*** Langkah 5: Implementasi filter berdasarkan Peran dan ID_Stasiun ***
     if (filterPeran) {
       query = query.eq('Peran', filterPeran);
     }
@@ -713,14 +713,15 @@ export class AdminService {
       query = query.eq('ID_Stasiun', filterStasiunId);
     }
 
-    //*** Langkah 7: Eksekusi query ***
+    //*** Langkah 6: Eksekusi query ***
     const { data, error } = await query;
 
     if (error) {
+      console.error('Supabase error:', error);
       throw new BadRequestException('Gagal mengambil data admin');
     }
 
-    //*** Langkah 8: Kembalikan response ***
+    //*** Langkah 7: Kembalikan response ***
     return {
       message: 'Data admin berhasil diambil',
       count: data?.length || 0,

@@ -469,20 +469,21 @@ let AdminService = class AdminService {
             throw new common_1.UnauthorizedException('Hanya Superadmin yang bisa mengakses data semua admin');
         }
         let query = supabase.from('Admin').select(`
-    ID_Admin,
-    Nama_Depan_Admin,
-    Nama_Belakang_Admin,
-    Email_Admin,
-    Peran,
-    Foto_Admin,
-    Created_At,
-    Stasiun (
-      ID_Stasiun,
-      Nama_Stasiun
-    )
-  `);
-        if (search) {
-            query = query.or(`Nama_Depan_Admin.ilike.%${search}%,Nama_Belakang_Admin.ilike.%${search}%,Email_Admin.ilike.%${search}%,Stasiun.Nama_Stasiun.ilike.%${search}%`);
+      ID_Admin,
+      Nama_Depan_Admin,
+      Nama_Belakang_Admin,
+      Email_Admin,
+      Peran,
+      Foto_Admin,
+      Created_At,
+      Stasiun (
+        ID_Stasiun,
+        Nama_Stasiun
+      )
+    `);
+        if (search && search.trim() !== '') {
+            const keyword = `%${search.trim()}%`;
+            query = query.or(`Nama_Depan_Admin.ilike.${keyword},Nama_Belakang_Admin.ilike.${keyword},Email_Admin.ilike.${keyword},Stasiun.Nama_Stasiun.ilike.${keyword}`);
         }
         if (filterPeran) {
             query = query.eq('Peran', filterPeran);
@@ -492,6 +493,7 @@ let AdminService = class AdminService {
         }
         const { data, error } = await query;
         if (error) {
+            console.error('Supabase error:', error);
             throw new common_1.BadRequestException('Gagal mengambil data admin');
         }
         return {

@@ -745,7 +745,7 @@ export class AdminService {
       id_stasiun,
     } = body;
 
-    // 🧩 1️⃣ Validasi input manual
+    //*** Langkah 1: Validasi input ***
     if (!nama_depan || !email || !password || !confirmPassword || !peran) {
       throw new BadRequestException(
         'Semua field wajib diisi (kecuali opsional)',
@@ -766,7 +766,7 @@ export class AdminService {
       throw new BadRequestException('Konfirmasi password tidak cocok');
     }
 
-    // 🧩 2️⃣ Cek apakah user pembuat adalah Superadmin
+    //*** Langkah 2: Dapatkan client supabase ***
     const supabase = this.supabaseService.getClient();
     const supabaseAdmin = this.supabaseService.getAdminClient();
 
@@ -782,7 +782,7 @@ export class AdminService {
       );
     }
 
-    // 🧩 3️⃣ Buat user baru di Supabase Auth
+    //*** Langkah 3: Buat user baru di Supabase Auth ***
     const { data: newUser, error: createUserError } =
       await supabaseAdmin.auth.admin.createUser({
         email,
@@ -798,7 +798,7 @@ export class AdminService {
 
     const newUserId = newUser.user.id;
 
-    // 🧩 4️⃣ Upload foto (atau gunakan default)
+    //*** Langkah 4: Upload foto admin baru ke Supabase Storage ***
     let fotoUrl: string;
     if (foto) {
       if (!['image/jpeg', 'image/png'].includes(foto.mimetype)) {
@@ -845,7 +845,7 @@ export class AdminService {
       fotoUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/foto-admin/${uploadedFileName}`;
     }
 
-    // 🧩 5️⃣ Simpan data admin baru di tabel Admin
+    //*** Langkah 5: Simpan data admin baru ke tabel Admin ***
     const { error: insertError } = await supabase.from('Admin').insert([
       {
         ID_Admin: newUserId,
@@ -865,7 +865,7 @@ export class AdminService {
       );
     }
 
-    // 🧩 6️⃣ Response sukses
+    //*** Langkah 6: Kembalikan response ***
     return {
       message: 'Admin berhasil dibuat',
       id: newUserId,

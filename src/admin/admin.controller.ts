@@ -292,7 +292,7 @@ export class AdminController {
   async createAdmin(
     @Request() req: { user: SupabaseUser },
     @Headers('user_id') user_id: string,
-    @Body() body: any, // tidak pakai DTO
+    @Body() body: any,
     @UploadedFile() foto?: Express.Multer.File,
   ) {
     const user = req.user;

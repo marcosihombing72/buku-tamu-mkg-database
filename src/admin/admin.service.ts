@@ -20,7 +20,7 @@ dayjs.extend(customParseFormat);
 dayjs.locale('id');
 dayjs.extend(isoWeek);
 
-import { CreateAdminDto } from '@/admin/dto/create-admin.dto';
+import { CreateAdminDto } from '@/admin/dto/createadmin.dto';
 import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
 import { ResetPasswordAdminDto } from '@/admin/dto/reset-password-admin.dto';
 import { UpdateProfileAdminDto } from '@/admin/dto/update-profile-admin.dto';

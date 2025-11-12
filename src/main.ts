@@ -1,90 +1,55 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { AppModule } from '@/app.module';
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import 'dotenv/config';
-import express, { json, urlencoded } from 'express';
-import swaggerUi from 'swagger-ui-express';
-import { AppModule } from './app.module';
+import express from 'express';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
 
 const server = express();
 
-let nestAppPromise: Promise<INestApplication> | null = null;
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
 
-export async function createNestApp() {
-  if (!nestAppPromise) {
-    nestAppPromise = (async () => {
-      const app = await NestFactory.create(
-        AppModule,
-        new ExpressAdapter(server),
-      );
+  // Security & performance setup
+  server.set('trust proxy', 1);
+  app.use(helmet());
+  app.use(
+    rateLimit({
+      windowMs: 60 * 1000,
+      max: 100,
+    }),
+  );
 
-      app.setGlobalPrefix('api');
+  // jadi /api
+  app.setGlobalPrefix('api');
 
-      app.enableCors({
-        origin: '*',
-        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-        credentials: true,
-      });
-
-      app.useGlobalPipes(
-        new ValidationPipe({
-          whitelist: true,
-          forbidNonWhitelisted: false,
-          transform: true,
-        }),
-      );
-
-      if (process.env.LOCAL === 'true') {
-        const config = new DocumentBuilder()
-          .setTitle('Dokumentasi API BUKU TAMU BMKG BENGKULU')
-          .setDescription('Dokumentasi API Buku Tamu BMKG Bengkulu')
-          .setVersion('1.0')
-          .addBearerAuth(
-            {
-              type: 'http',
-              scheme: 'bearer',
-              bearerFormat: 'JWT',
-              description: 'Bearer token',
-            },
-            'access-token',
-          )
-          .build();
-
-        const document = SwaggerModule.createDocument(app, config);
-
-        server.use(json({ limit: '10mb' }));
-        server.use(urlencoded({ limit: '10mb', extended: true }));
-        server.use(
-          '/api',
-          swaggerUi.serve,
-          swaggerUi.setup(document, {
-            customCss: `.topbar { display: none }`,
-            swaggerOptions: {
-              docExpansion: 'none',
-              defaultModelsExpandDepth: -1,
-            },
-          }),
-        );
-      }
-
-      await app.init();
-      return app;
-    })();
-  }
-  return nestAppPromise;
-}
-
-// =====================
-// Local dev server
-// =====================
-if (process.env.LOCAL === 'true') {
-  void createNestApp().then(() => {
-    const port = Number(process.env.PORT) || 3000;
-    server.listen(port, () => {
-      console.log(`🚀 Server running at http://localhost:${port}`);
-    });
+  app.enableCors({
+    origin: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
   });
+
+  // Swagger
+  const config = new DocumentBuilder()
+    .setTitle('Buku Tamu MKG')
+    .setDescription('Buku Tamu MKG')
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+      'access-token',
+    )
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
+
+  await app.init();
 }
 
-export { server };
+bootstrap();
+
+export default server;

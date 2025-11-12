@@ -29,7 +29,7 @@ import {
 } from '@nestjs/swagger';
 
 import { AdminService } from '@/admin/admin.service';
-import { CreateAdminDto } from '@/admin/dto/create-admin.dto';
+import { CreateAdminDto } from '@/admin/dto/createadmin.dto';
 import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
 import { ResetPasswordAdminDto } from '@/admin/dto/reset-password-admin.dto';
 import { UpdateProfileAdminDto } from '@/admin/dto/update-profile-admin.dto';

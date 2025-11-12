@@ -17,7 +17,7 @@ const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
 const admin_service_1 = require("./admin.service");
-const create_admin_dto_1 = require("./dto/create-admin.dto");
+const createadmin_dto_1 = require("./dto/createadmin.dto");
 const login_admin_dto_1 = require("./dto/login-admin.dto");
 const reset_password_admin_dto_1 = require("./dto/reset-password-admin.dto");
 const update_profile_admin_dto_1 = require("./dto/update-profile-admin.dto");
@@ -282,7 +282,7 @@ __decorate([
     __param(2, (0, common_1.UploadedFile)()),
     __param(3, (0, common_1.Headers)('user_id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, create_admin_dto_1.CreateAdminDto, Object, String]),
+    __metadata("design:paramtypes", [Object, createadmin_dto_1.CreateAdminDto, Object, String]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "createAdmin", null);
 __decorate([

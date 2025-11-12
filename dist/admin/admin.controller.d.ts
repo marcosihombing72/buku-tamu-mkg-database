@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext } from '@nestjs/common';
 import { AdminService } from '@/admin/admin.service';
-import { CreateAdminDto } from '@/admin/dto/create-admin.dto';
+import { CreateAdminDto } from '@/admin/dto/createadmin.dto';
 import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
 import { ResetPasswordAdminDto } from '@/admin/dto/reset-password-admin.dto';
 import { UpdateProfileAdminDto } from '@/admin/dto/update-profile-admin.dto';
@@ -108,7 +108,7 @@ export declare class AdminController {
         message: string;
         id: string;
         email: string;
-        peran: import("@/admin/dto/create-admin.dto").PeranAdminEnum;
+        peran: import("@/admin/dto/createadmin.dto").PeranAdminEnum;
     }>;
     updateAdmin(req: {
         user: SupabaseUser;

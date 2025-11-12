@@ -500,7 +500,20 @@ let AdminService = class AdminService {
             data,
         };
     }
-    async createAdmin(dto, foto, user, user_id) {
+    async createAdmin(body, foto, user, user_id) {
+        const { nama_depan, nama_belakang, email, password, confirmPassword, peran, id_stasiun, } = body;
+        if (!nama_depan || !email || !password || !confirmPassword || !peran) {
+            throw new common_1.BadRequestException('Semua field wajib diisi (kecuali opsional)');
+        }
+        if (!['Admin', 'Superadmin'].includes(peran)) {
+            throw new common_1.BadRequestException('Peran tidak valid (hanya Admin / Superadmin)');
+        }
+        if (password.length < 6) {
+            throw new common_1.BadRequestException('Password minimal 6 karakter');
+        }
+        if (password !== confirmPassword) {
+            throw new common_1.BadRequestException('Konfirmasi password tidak cocok');
+        }
         const supabase = this.supabaseService.getClient();
         const supabaseAdmin = this.supabaseService.getAdminClient();
         const { data: roleCheck, error: roleError } = await supabase
@@ -511,12 +524,9 @@ let AdminService = class AdminService {
         if (roleError || !roleCheck || roleCheck.Peran !== 'Superadmin') {
             throw new common_1.ForbiddenException('Hanya Superadmin yang dapat menambahkan admin baru');
         }
-        if (dto.password !== dto.confirmPassword) {
-            throw new common_1.BadRequestException('Konfirmasi password tidak cocok');
-        }
         const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-            email: dto.email,
-            password: dto.password,
+            email,
+            password,
             email_confirm: true,
         });
         if (createUserError) {
@@ -548,9 +558,8 @@ let AdminService = class AdminService {
         else {
             const defaultPath = (0, path_1.join)(process.cwd(), 'src', 'public', 'Logo_BMKG.png');
             const fileBuffer = (0, fs_1.readFileSync)(defaultPath);
-            const fileExt = 'png';
             const uniqueId = (0, crypto_1.randomUUID)();
-            const uploadedFileName = `${newUserId}_${uniqueId}.${fileExt}`;
+            const uploadedFileName = `${newUserId}_${uniqueId}.png`;
             const { error: uploadError } = await supabase.storage
                 .from('foto-admin')
                 .upload(uploadedFileName, fileBuffer, {
@@ -565,12 +574,12 @@ let AdminService = class AdminService {
         const { error: insertError } = await supabase.from('Admin').insert([
             {
                 ID_Admin: newUserId,
-                Peran: dto.peran,
-                ID_Stasiun: dto.peran === 'Admin' ? dto.id_stasiun : null,
+                Peran: peran,
+                ID_Stasiun: peran === 'Admin' ? id_stasiun : null,
                 Created_At: new Date().toISOString(),
-                Nama_Depan_Admin: dto.nama_depan,
-                Nama_Belakang_Admin: dto.nama_belakang || null,
-                Email_Admin: dto.email,
+                Nama_Depan_Admin: nama_depan,
+                Nama_Belakang_Admin: nama_belakang || null,
+                Email_Admin: email,
                 Foto_Admin: fotoUrl,
             },
         ]);
@@ -580,8 +589,8 @@ let AdminService = class AdminService {
         return {
             message: 'Admin berhasil dibuat',
             id: newUserId,
-            email: dto.email,
-            peran: dto.peran,
+            email,
+            peran,
         };
     }
     async updateAdmin(user, id_admin, dto, user_id) {

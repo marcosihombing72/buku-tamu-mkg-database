@@ -20,7 +20,6 @@ dayjs.extend(customParseFormat);
 dayjs.locale('id');
 dayjs.extend(isoWeek);
 
-import { CreateAdminDto } from '@/admin/dto/createadmin.dto';
 import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
 import { ResetPasswordAdminDto } from '@/admin/dto/reset-password-admin.dto';
 import { UpdateProfileAdminDto } from '@/admin/dto/update-profile-admin.dto';
@@ -731,16 +730,46 @@ export class AdminService {
 
   //*** Fungsi untuk menambahkan admin baru (hanya untuk Superadmin) ***
   async createAdmin(
-    dto: CreateAdminDto,
+    body: any, // tidak pakai DTO lagi
     foto: Express.Multer.File,
     user: SupabaseUser,
     user_id: string,
   ) {
-    //*** Langkah 1: Dapatkan client Supabase dan Supabase Admin ***
+    const {
+      nama_depan,
+      nama_belakang,
+      email,
+      password,
+      confirmPassword,
+      peran,
+      id_stasiun,
+    } = body;
+
+    // 🧩 1️⃣ Validasi input manual
+    if (!nama_depan || !email || !password || !confirmPassword || !peran) {
+      throw new BadRequestException(
+        'Semua field wajib diisi (kecuali opsional)',
+      );
+    }
+
+    if (!['Admin', 'Superadmin'].includes(peran)) {
+      throw new BadRequestException(
+        'Peran tidak valid (hanya Admin / Superadmin)',
+      );
+    }
+
+    if (password.length < 6) {
+      throw new BadRequestException('Password minimal 6 karakter');
+    }
+
+    if (password !== confirmPassword) {
+      throw new BadRequestException('Konfirmasi password tidak cocok');
+    }
+
+    // 🧩 2️⃣ Cek apakah user pembuat adalah Superadmin
     const supabase = this.supabaseService.getClient();
     const supabaseAdmin = this.supabaseService.getAdminClient();
 
-    //*** Langkah 2: Cek apakah user yang membuat admin adalah Superadmin ***
     const { data: roleCheck, error: roleError } = await supabase
       .from('Admin')
       .select('Peran')
@@ -753,16 +782,11 @@ export class AdminService {
       );
     }
 
-    //*** Langkah 3: Validasi password dan konfirmasi password ***
-    if (dto.password !== dto.confirmPassword) {
-      throw new BadRequestException('Konfirmasi password tidak cocok');
-    }
-
-    //*** Langkah 4: Buat user baru di Supabase Auth ***
+    // 🧩 3️⃣ Buat user baru di Supabase Auth
     const { data: newUser, error: createUserError } =
       await supabaseAdmin.auth.admin.createUser({
-        email: dto.email,
-        password: dto.password,
+        email,
+        password,
         email_confirm: true,
       });
 
@@ -774,9 +798,8 @@ export class AdminService {
 
     const newUserId = newUser.user.id;
 
-    //*** Langkah 5: Upload foto admin baru atau gunakan foto default ***
+    // 🧩 4️⃣ Upload foto (atau gunakan default)
     let fotoUrl: string;
-
     if (foto) {
       if (!['image/jpeg', 'image/png'].includes(foto.mimetype)) {
         throw new BadRequestException('Format file harus JPG atau PNG');
@@ -802,12 +825,11 @@ export class AdminService {
 
       fotoUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/foto-admin/${uploadedFileName}`;
     } else {
-      //*** Langkah 5b: Gunakan foto default yang diunggah ***
+      // foto default
       const defaultPath = join(process.cwd(), 'src', 'public', 'Logo_BMKG.png');
       const fileBuffer = readFileSync(defaultPath);
-      const fileExt = 'png';
       const uniqueId = randomUUID();
-      const uploadedFileName = `${newUserId}_${uniqueId}.${fileExt}`;
+      const uploadedFileName = `${newUserId}_${uniqueId}.png`;
 
       const { error: uploadError } = await supabase.storage
         .from('foto-admin')
@@ -823,16 +845,16 @@ export class AdminService {
       fotoUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/foto-admin/${uploadedFileName}`;
     }
 
-    //*** Langkah 6: Simpan data admin baru di tabel Admin ***
+    // 🧩 5️⃣ Simpan data admin baru di tabel Admin
     const { error: insertError } = await supabase.from('Admin').insert([
       {
         ID_Admin: newUserId,
-        Peran: dto.peran,
-        ID_Stasiun: dto.peran === 'Admin' ? dto.id_stasiun : null,
+        Peran: peran,
+        ID_Stasiun: peran === 'Admin' ? id_stasiun : null,
         Created_At: new Date().toISOString(),
-        Nama_Depan_Admin: dto.nama_depan,
-        Nama_Belakang_Admin: dto.nama_belakang || null,
-        Email_Admin: dto.email,
+        Nama_Depan_Admin: nama_depan,
+        Nama_Belakang_Admin: nama_belakang || null,
+        Email_Admin: email,
         Foto_Admin: fotoUrl,
       },
     ]);
@@ -843,12 +865,12 @@ export class AdminService {
       );
     }
 
-    //*** Langkah 7: Kembalikan response ***
+    // 🧩 6️⃣ Response sukses
     return {
       message: 'Admin berhasil dibuat',
       id: newUserId,
-      email: dto.email,
-      peran: dto.peran,
+      email,
+      peran,
     };
   }
 

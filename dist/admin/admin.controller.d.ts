@@ -107,8 +107,8 @@ export declare class AdminController {
     }, dto: CreateAdminDto, foto: Express.Multer.File, user_id: string): Promise<{
         message: string;
         id: string;
-        email: string;
-        peran: import("@/admin/dto/createadmin.dto").PeranAdminEnum;
+        email: any;
+        peran: any;
     }>;
     updateAdmin(req: {
         user: SupabaseUser;

@@ -476,14 +476,11 @@ let AdminService = class AdminService {
       Peran,
       Foto_Admin,
       Created_At,
-      Stasiun (
-        ID_Stasiun,
-        Nama_Stasiun
-      )
+      Stasiun:Stasiun(ID_Stasiun, Nama_Stasiun)
     `);
         if (search && search.trim() !== '') {
-            const keyword = `%${search.trim()}%`;
-            query = query.or(`Nama_Depan_Admin.ilike.${keyword},Nama_Belakang_Admin.ilike.${keyword},Email_Admin.ilike.${keyword},Stasiun.Nama_Stasiun.ilike.${keyword}`);
+            const keyword = search.trim();
+            query = query.or(`Nama_Depan_Admin.ilike."%${keyword}%",Nama_Belakang_Admin.ilike."%${keyword}%",Email_Admin.ilike."%${keyword}%"`);
         }
         if (filterPeran) {
             query = query.eq('Peran', filterPeran);
@@ -496,10 +493,18 @@ let AdminService = class AdminService {
             console.error('Supabase error:', error);
             throw new common_1.BadRequestException('Gagal mengambil data admin');
         }
+        let filteredData = data || [];
+        if (search && search.trim() !== '') {
+            const lowerSearch = search.toLowerCase();
+            filteredData = filteredData.filter((item) => item.Stasiun?.[0]?.Nama_Stasiun?.toLowerCase().includes(lowerSearch) ||
+                item.Nama_Depan_Admin?.toLowerCase().includes(lowerSearch) ||
+                item.Nama_Belakang_Admin?.toLowerCase().includes(lowerSearch) ||
+                item.Email_Admin?.toLowerCase().includes(lowerSearch));
+        }
         return {
             message: 'Data admin berhasil diambil',
-            count: data?.length || 0,
-            data,
+            count: filteredData.length,
+            data: filteredData,
         };
     }
     async createAdmin(body, foto, user, user_id) {

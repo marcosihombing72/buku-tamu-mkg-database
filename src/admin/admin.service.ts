@@ -657,10 +657,10 @@ export class AdminService {
     filterPeran?: string,
     filterStasiunId?: string,
   ) {
-    //*** Langkah 1: Dapatkan client Supabase ***
     const supabase = this.supabaseService.getClient();
     const userId = user.id;
 
+    // Langkah 1: Ambil data admin yang sedang login
     const { data: currentAdmin, error: currentAdminError } = await supabase
       .from('Admin')
       .select('Peran, ID_Stasiun')
@@ -671,14 +671,14 @@ export class AdminService {
       throw new BadRequestException('Data admin tidak ditemukan');
     }
 
-    //*** Langkah 2: Cek apakah admin adalah Superadmin ***
+    // Langkah 2: Hanya Superadmin yang boleh ambil semua data
     if (currentAdmin.Peran !== 'Superadmin') {
       throw new UnauthorizedException(
         'Hanya Superadmin yang bisa mengakses data semua admin',
       );
     }
 
-    //*** Langkah 3: Bangun query dasar untuk mengambil data admin ***
+    // Langkah 3: Query dasar — tambahkan .single() agar relasi bukan array
     let query = supabase.from('Admin').select(
       `
       ID_Admin,
@@ -688,23 +688,19 @@ export class AdminService {
       Peran,
       Foto_Admin,
       Created_At,
-      Stasiun (
-        ID_Stasiun,
-        Nama_Stasiun
-      )
+      Stasiun:Stasiun(ID_Stasiun, Nama_Stasiun)
     `,
     );
 
-    //*** Langkah 4: Implementasi fitur pencarian (search) ***
+    // Langkah 4: Tambahkan pencarian nama dan email
     if (search && search.trim() !== '') {
-      const keyword = `%${search.trim()}%`;
-
+      const keyword = search.trim();
       query = query.or(
-        `Nama_Depan_Admin.ilike.${keyword},Nama_Belakang_Admin.ilike.${keyword},Email_Admin.ilike.${keyword},Stasiun.Nama_Stasiun.ilike.${keyword}`,
+        `Nama_Depan_Admin.ilike."%${keyword}%",Nama_Belakang_Admin.ilike."%${keyword}%",Email_Admin.ilike."%${keyword}%"`,
       );
     }
 
-    //*** Langkah 5: Implementasi filter berdasarkan Peran dan ID_Stasiun ***
+    // Langkah 5: Filter peran & stasiun
     if (filterPeran) {
       query = query.eq('Peran', filterPeran);
     }
@@ -713,7 +709,7 @@ export class AdminService {
       query = query.eq('ID_Stasiun', filterStasiunId);
     }
 
-    //*** Langkah 6: Eksekusi query ***
+    // Langkah 6: Eksekusi query
     const { data, error } = await query;
 
     if (error) {
@@ -721,11 +717,26 @@ export class AdminService {
       throw new BadRequestException('Gagal mengambil data admin');
     }
 
-    //*** Langkah 7: Kembalikan response ***
+    // Langkah 7: Filter manual untuk Nama Stasiun
+    let filteredData = data || [];
+    if (search && search.trim() !== '') {
+      const lowerSearch = search.toLowerCase();
+      filteredData = filteredData.filter(
+        (item) =>
+          item.Stasiun?.[0]?.Nama_Stasiun?.toLowerCase().includes(
+            lowerSearch,
+          ) ||
+          item.Nama_Depan_Admin?.toLowerCase().includes(lowerSearch) ||
+          item.Nama_Belakang_Admin?.toLowerCase().includes(lowerSearch) ||
+          item.Email_Admin?.toLowerCase().includes(lowerSearch),
+      );
+    }
+
+    // Langkah 8: Return hasil
     return {
       message: 'Data admin berhasil diambil',
-      count: data?.length || 0,
-      data,
+      count: filteredData.length,
+      data: filteredData,
     };
   }
 

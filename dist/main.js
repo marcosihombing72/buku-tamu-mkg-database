@@ -11,34 +11,31 @@ const express_1 = __importDefault(require("express"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const helmet_1 = __importDefault(require("helmet"));
 const server = (0, express_1.default)();
-server.use((req, res, next) => {
-    const allowedOrigins = [
-        'http://localhost:3000',
-        'https://admin-buku-tamu-mkg.vercel.app',
-    ];
-    const origin = req.headers.origin;
-    if (origin && allowedOrigins.includes(origin)) {
-        res.header('Access-Control-Allow-Origin', origin);
-    }
-    res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, access_token, user_id');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    if (req.method === 'OPTIONS') {
-        return res.sendStatus(200);
-    }
-    next();
-});
-server.set('trust proxy', 1);
-server.use((0, helmet_1.default)());
-server.use((0, express_rate_limit_1.default)({
-    windowMs: 60 * 1000,
-    max: 100,
-}));
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule, new platform_express_1.ExpressAdapter(server));
+    app.use((0, helmet_1.default)());
+    app.use((0, express_rate_limit_1.default)({
+        windowMs: 60 * 1000,
+        max: 100,
+    }));
     app.setGlobalPrefix('api');
     app.enableCors({
-        origin: ['http://localhost:3000', 'https://admin-buku-tamu-mkg.vercel.app'],
+        origin: (origin, callback) => {
+            const allowedOrigins = [
+                'http://localhost:3000',
+                'https://admin-buku-tamu-mkg.vercel.app',
+            ];
+            if (!origin)
+                return callback(null, true);
+            if (allowedOrigins.includes(origin)) {
+                callback(null, true);
+            }
+            else {
+                console.warn(`❌ Blocked by CORS: ${origin}`);
+                callback(new Error('Not allowed by CORS'));
+            }
+        },
+        credentials: true,
         methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
         allowedHeaders: [
             'Origin',
@@ -49,7 +46,6 @@ async function bootstrap() {
             'access_token',
             'user_id',
         ],
-        credentials: true,
     });
     const config = new swagger_1.DocumentBuilder()
         .setTitle('Buku Tamu MKG')

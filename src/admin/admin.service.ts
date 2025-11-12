@@ -13,10 +13,14 @@ import 'dayjs/locale/id';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import isoWeek from 'dayjs/plugin/isoWeek';
 
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
 dayjs.extend(customParseFormat);
 dayjs.locale('id');
 dayjs.extend(isoWeek);
 
+import { CreateAdminDto } from '@/admin/dto/create-admin.dto';
 import { LoginAdminDto } from '@/admin/dto/login-admin.dto';
 import { ResetPasswordAdminDto } from '@/admin/dto/reset-password-admin.dto';
 import { UpdateProfileAdminDto } from '@/admin/dto/update-profile-admin.dto';
@@ -726,92 +730,127 @@ export class AdminService {
   }
 
   //*** Fungsi untuk menambahkan admin baru (hanya untuk Superadmin) ***
-  // async createAdmin(
-  //   dto: CreateAdminDto,
-  //   foto: Express.Multer.File,
-  //   access_token: string,
-  //   user_id: string,
-  // ) {
-  //   const supabase = this.supabaseService.getClient();
-  //   const supabaseAdmin = this.supabaseService.getAdminClient();
+  async createAdmin(
+    dto: CreateAdminDto,
+    foto: Express.Multer.File,
+    user: SupabaseUser,
+    user_id: string,
+  ) {
+    //*** Langkah 1: Dapatkan client Supabase dan Supabase Admin ***
+    const supabase = this.supabaseService.getClient();
+    const supabaseAdmin = this.supabaseService.getAdminClient();
 
-  //   // ... (validasi token & role tetap sama)
+    //*** Langkah 2: Cek apakah user yang membuat admin adalah Superadmin ***
+    const { data: roleCheck, error: roleError } = await supabase
+      .from('Admin')
+      .select('Peran')
+      .eq('ID_Admin', user_id)
+      .single();
 
-  //   // Validasi password
-  //   if (dto.password !== dto.confirmPassword) {
-  //     throw new BadRequestException('Konfirmasi password tidak cocok');
-  //   }
+    if (roleError || !roleCheck || roleCheck.Peran !== 'Superadmin') {
+      throw new ForbiddenException(
+        'Hanya Superadmin yang dapat menambahkan admin baru',
+      );
+    }
 
-  //   // Buat user baru di Supabase Auth
-  //   const { data: newUser, error: createUserError } =
-  //     await supabaseAdmin.auth.admin.createUser({
-  //       email: dto.email,
-  //       password: dto.password,
-  //       email_confirm: true,
-  //     });
+    //*** Langkah 3: Validasi password dan konfirmasi password ***
+    if (dto.password !== dto.confirmPassword) {
+      throw new BadRequestException('Konfirmasi password tidak cocok');
+    }
 
-  //   if (createUserError) {
-  //     throw new BadRequestException(
-  //       'Gagal membuat user baru: ' + createUserError.message,
-  //     );
-  //   }
+    //*** Langkah 4: Buat user baru di Supabase Auth ***
+    const { data: newUser, error: createUserError } =
+      await supabaseAdmin.auth.admin.createUser({
+        email: dto.email,
+        password: dto.password,
+        email_confirm: true,
+      });
 
-  //   const newUserId = newUser.user.id;
+    if (createUserError) {
+      throw new BadRequestException(
+        'Gagal membuat user baru: ' + createUserError.message,
+      );
+    }
 
-  //   let fotoUrl: string | null = null;
-  //   if (foto) {
-  //     if (!['image/jpeg', 'image/png'].includes(foto.mimetype)) {
-  //       throw new BadRequestException('Format file harus JPG atau PNG');
-  //     }
-  //     if (foto.size > 10 * 1024 * 1024) {
-  //       throw new BadRequestException('Ukuran file maksimal 10MB');
-  //     }
+    const newUserId = newUser.user.id;
 
-  //     const fileExt = foto.originalname.split('.').pop();
-  //     const uniqueId = randomUUID();
-  //     const uploadedFileName = `${newUserId}_${uniqueId}.${fileExt}`;
+    //*** Langkah 5: Upload foto admin baru atau gunakan foto default ***
+    let fotoUrl: string;
 
-  //     const { error: uploadError } = await supabase.storage
-  //       .from('foto-admin')
-  //       .upload(uploadedFileName, foto.buffer, {
-  //         contentType: foto.mimetype,
-  //         upsert: true,
-  //       });
+    if (foto) {
+      if (!['image/jpeg', 'image/png'].includes(foto.mimetype)) {
+        throw new BadRequestException('Format file harus JPG atau PNG');
+      }
+      if (foto.size > 10 * 1024 * 1024) {
+        throw new BadRequestException('Ukuran file maksimal 10MB');
+      }
 
-  //     if (uploadError) {
-  //       throw new BadRequestException('Gagal mengunggah foto baru');
-  //     }
+      const fileExt = foto.originalname.split('.').pop();
+      const uniqueId = randomUUID();
+      const uploadedFileName = `${newUserId}_${uniqueId}.${fileExt}`;
 
-  //     fotoUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/foto-admin/${uploadedFileName}`;
-  //   }
+      const { error: uploadError } = await supabase.storage
+        .from('foto-admin')
+        .upload(uploadedFileName, foto.buffer, {
+          contentType: foto.mimetype,
+          upsert: true,
+        });
 
-  //   // Simpan ke tabel Admin
-  //   const { error: insertError } = await supabase.from('Admin').insert([
-  //     {
-  //       ID_Admin: newUserId,
-  //       Peran: dto.peran,
-  //       ID_Stasiun: dto.peran === 'Admin' ? dto.id_stasiun : null,
-  //       Created_At: new Date().toISOString(),
-  //       Nama_Depan_Admin: dto.nama_depan,
-  //       Nama_Belakang_Admin: dto.nama_belakang || null,
-  //       Email_Admin: dto.email,
-  //       Foto_Admin: fotoUrl,
-  //     },
-  //   ]);
+      if (uploadError) {
+        throw new BadRequestException('Gagal mengunggah foto baru');
+      }
 
-  //   if (insertError) {
-  //     throw new BadRequestException(
-  //       'Gagal menyimpan data admin: ' + insertError.message,
-  //     );
-  //   }
+      fotoUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/foto-admin/${uploadedFileName}`;
+    } else {
+      //*** Langkah 5b: Gunakan foto default yang diunggah ***
+      const defaultPath = join(process.cwd(), 'src', 'public', 'Logo_BMKG.png');
+      const fileBuffer = readFileSync(defaultPath);
+      const fileExt = 'png';
+      const uniqueId = randomUUID();
+      const uploadedFileName = `${newUserId}_${uniqueId}.${fileExt}`;
 
-  //   return {
-  //     message: 'Admin berhasil dibuat',
-  //     id: newUserId,
-  //     email: dto.email,
-  //     peran: dto.peran,
-  //   };
-  // }
+      const { error: uploadError } = await supabase.storage
+        .from('foto-admin')
+        .upload(uploadedFileName, fileBuffer, {
+          contentType: 'image/png',
+          upsert: true,
+        });
+
+      if (uploadError) {
+        throw new BadRequestException('Gagal mengunggah foto default');
+      }
+
+      fotoUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/foto-admin/${uploadedFileName}`;
+    }
+
+    //*** Langkah 6: Simpan data admin baru di tabel Admin ***
+    const { error: insertError } = await supabase.from('Admin').insert([
+      {
+        ID_Admin: newUserId,
+        Peran: dto.peran,
+        ID_Stasiun: dto.peran === 'Admin' ? dto.id_stasiun : null,
+        Created_At: new Date().toISOString(),
+        Nama_Depan_Admin: dto.nama_depan,
+        Nama_Belakang_Admin: dto.nama_belakang || null,
+        Email_Admin: dto.email,
+        Foto_Admin: fotoUrl,
+      },
+    ]);
+
+    if (insertError) {
+      throw new BadRequestException(
+        'Gagal menyimpan data admin: ' + insertError.message,
+      );
+    }
+
+    //*** Langkah 7: Kembalikan response ***
+    return {
+      message: 'Admin berhasil dibuat',
+      id: newUserId,
+      email: dto.email,
+      peran: dto.peran,
+    };
+  }
 
   //*** Fungsi untuk mengupdate admin (Superadmin) ***
   async updateAdmin(

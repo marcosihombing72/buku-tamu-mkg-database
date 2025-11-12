@@ -20,6 +20,8 @@ const dayjs_1 = __importDefault(require("dayjs"));
 require("dayjs/locale/id");
 const customParseFormat_1 = __importDefault(require("dayjs/plugin/customParseFormat"));
 const isoWeek_1 = __importDefault(require("dayjs/plugin/isoWeek"));
+const fs_1 = require("fs");
+const path_1 = require("path");
 dayjs_1.default.extend(customParseFormat_1.default);
 dayjs_1.default.locale('id');
 dayjs_1.default.extend(isoWeek_1.default);
@@ -496,6 +498,90 @@ let AdminService = class AdminService {
             message: 'Data admin berhasil diambil',
             count: data?.length || 0,
             data,
+        };
+    }
+    async createAdmin(dto, foto, user, user_id) {
+        const supabase = this.supabaseService.getClient();
+        const supabaseAdmin = this.supabaseService.getAdminClient();
+        const { data: roleCheck, error: roleError } = await supabase
+            .from('Admin')
+            .select('Peran')
+            .eq('ID_Admin', user_id)
+            .single();
+        if (roleError || !roleCheck || roleCheck.Peran !== 'Superadmin') {
+            throw new common_1.ForbiddenException('Hanya Superadmin yang dapat menambahkan admin baru');
+        }
+        if (dto.password !== dto.confirmPassword) {
+            throw new common_1.BadRequestException('Konfirmasi password tidak cocok');
+        }
+        const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
+            email: dto.email,
+            password: dto.password,
+            email_confirm: true,
+        });
+        if (createUserError) {
+            throw new common_1.BadRequestException('Gagal membuat user baru: ' + createUserError.message);
+        }
+        const newUserId = newUser.user.id;
+        let fotoUrl;
+        if (foto) {
+            if (!['image/jpeg', 'image/png'].includes(foto.mimetype)) {
+                throw new common_1.BadRequestException('Format file harus JPG atau PNG');
+            }
+            if (foto.size > 10 * 1024 * 1024) {
+                throw new common_1.BadRequestException('Ukuran file maksimal 10MB');
+            }
+            const fileExt = foto.originalname.split('.').pop();
+            const uniqueId = (0, crypto_1.randomUUID)();
+            const uploadedFileName = `${newUserId}_${uniqueId}.${fileExt}`;
+            const { error: uploadError } = await supabase.storage
+                .from('foto-admin')
+                .upload(uploadedFileName, foto.buffer, {
+                contentType: foto.mimetype,
+                upsert: true,
+            });
+            if (uploadError) {
+                throw new common_1.BadRequestException('Gagal mengunggah foto baru');
+            }
+            fotoUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/foto-admin/${uploadedFileName}`;
+        }
+        else {
+            const defaultPath = (0, path_1.join)(process.cwd(), 'src', 'public', 'Logo_BMKG.png');
+            const fileBuffer = (0, fs_1.readFileSync)(defaultPath);
+            const fileExt = 'png';
+            const uniqueId = (0, crypto_1.randomUUID)();
+            const uploadedFileName = `${newUserId}_${uniqueId}.${fileExt}`;
+            const { error: uploadError } = await supabase.storage
+                .from('foto-admin')
+                .upload(uploadedFileName, fileBuffer, {
+                contentType: 'image/png',
+                upsert: true,
+            });
+            if (uploadError) {
+                throw new common_1.BadRequestException('Gagal mengunggah foto default');
+            }
+            fotoUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/foto-admin/${uploadedFileName}`;
+        }
+        const { error: insertError } = await supabase.from('Admin').insert([
+            {
+                ID_Admin: newUserId,
+                Peran: dto.peran,
+                ID_Stasiun: dto.peran === 'Admin' ? dto.id_stasiun : null,
+                Created_At: new Date().toISOString(),
+                Nama_Depan_Admin: dto.nama_depan,
+                Nama_Belakang_Admin: dto.nama_belakang || null,
+                Email_Admin: dto.email,
+                Foto_Admin: fotoUrl,
+            },
+        ]);
+        if (insertError) {
+            throw new common_1.BadRequestException('Gagal menyimpan data admin: ' + insertError.message);
+        }
+        return {
+            message: 'Admin berhasil dibuat',
+            id: newUserId,
+            email: dto.email,
+            peran: dto.peran,
         };
     }
     async updateAdmin(user, id_admin, dto, user_id) {

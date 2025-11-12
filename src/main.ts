@@ -2,54 +2,86 @@ import { AppModule } from '@/app.module';
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 
 const server = express();
 
-// ✅ Middleware security & rate limit global
+// ✅ Tambahkan CORS manual di level Express
+server.use((req: Request, res: Response, next: NextFunction) => {
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'https://admin-buku-tamu-mkg.vercel.app/',
+  ];
+
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+
+  res.header(
+    'Access-Control-Allow-Methods',
+    'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  );
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept, Authorization, access_token, user_id',
+  );
+  res.header('Access-Control-Allow-Credentials', 'true');
+
+  // ✅ Jika preflight request, kirim 200 langsung
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
+
+// ✅ Middleware keamanan
 server.set('trust proxy', 1);
 server.use(helmet());
 server.use(
   rateLimit({
-    windowMs: 60 * 1000, // 1 menit
-    max: 100, // max 100 request per IP
+    windowMs: 60 * 1000,
+    max: 100,
   }),
 );
 
 async function bootstrap() {
-  // Gunakan ExpressAdapter untuk serverless Vercel
   const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
 
-  // ✅ Prefix semua route
   app.setGlobalPrefix('api');
 
-  // ✅ Enable CORS
+  // ✅ Tetap aktifkan CORS di sisi NestJS
   app.enableCors({
     origin: [
-      'http://localhost:3000', // development
-      'https://admin-buku-tamu-mkg.vercel.app', // production
+      'http://localhost:3000',
+      'https://admin-buku-tamu-mkg.vercel.app/',
     ],
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    credentials: true, // jika ada cookie / JWT
+    allowedHeaders: [
+      'Origin',
+      'X-Requested-With',
+      'Content-Type',
+      'Accept',
+      'Authorization',
+      'access_token',
+      'user_id',
+    ],
+    credentials: true,
   });
 
-  // ✅ Swagger
   const config = new DocumentBuilder()
     .setTitle('Buku Tamu MKG')
     .setDescription('Buku Tamu MKG API')
     .setVersion('1.0')
-    .addBearerAuth(
-      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
-      'access-token',
-    )
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  // ❌ Jangan pakai app.listen() di Vercel
   await app.init();
 }
 

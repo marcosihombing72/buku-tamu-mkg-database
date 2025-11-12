@@ -12,7 +12,7 @@ const server = express();
 server.use((req: Request, res: Response, next: NextFunction) => {
   const allowedOrigins = [
     'http://localhost:3000',
-    'https://admin-buku-tamu-mkg.vercel.app/',
+    'https://admin-buku-tamu-mkg.vercel.app',
   ];
 
   const origin = req.headers.origin;
@@ -55,10 +55,7 @@ async function bootstrap() {
 
   // ✅ Tetap aktifkan CORS di sisi NestJS
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'https://admin-buku-tamu-mkg.vercel.app/',
-    ],
+    origin: ['http://localhost:3000', 'https://admin-buku-tamu-mkg.vercel.app'],
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Origin',

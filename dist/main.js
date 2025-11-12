@@ -14,7 +14,7 @@ const server = (0, express_1.default)();
 server.use((req, res, next) => {
     const allowedOrigins = [
         'http://localhost:3000',
-        'https://admin-buku-tamu-mkg.vercel.app/',
+        'https://admin-buku-tamu-mkg.vercel.app',
     ];
     const origin = req.headers.origin;
     if (origin && allowedOrigins.includes(origin)) {
@@ -38,10 +38,7 @@ async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule, new platform_express_1.ExpressAdapter(server));
     app.setGlobalPrefix('api');
     app.enableCors({
-        origin: [
-            'http://localhost:3000',
-            'https://admin-buku-tamu-mkg.vercel.app/',
-        ],
+        origin: ['http://localhost:3000', 'https://admin-buku-tamu-mkg.vercel.app'],
         methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
         allowedHeaders: [
             'Origin',

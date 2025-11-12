@@ -657,10 +657,10 @@ export class AdminService {
     filterPeran?: string,
     filterStasiunId?: string,
   ) {
+    //*** Langkah 1: Dapatkan client Supabase ***
     const supabase = this.supabaseService.getClient();
     const userId = user.id;
 
-    // Langkah 1: Ambil data admin yang sedang login
     const { data: currentAdmin, error: currentAdminError } = await supabase
       .from('Admin')
       .select('Peran, ID_Stasiun')
@@ -671,14 +671,14 @@ export class AdminService {
       throw new BadRequestException('Data admin tidak ditemukan');
     }
 
-    // Langkah 2: Hanya Superadmin yang boleh ambil semua data
+    //*** Langkah 2: Cek apakah admin adalah Superadmin ***
     if (currentAdmin.Peran !== 'Superadmin') {
       throw new UnauthorizedException(
         'Hanya Superadmin yang bisa mengakses data semua admin',
       );
     }
 
-    // Langkah 3: Query dasar — tambahkan .single() agar relasi bukan array
+    //*** Langkah 3: Bangun query dasar untuk mengambil data admin ***
     let query = supabase.from('Admin').select(
       `
       ID_Admin,
@@ -692,7 +692,7 @@ export class AdminService {
     `,
     );
 
-    // Langkah 4: Tambahkan pencarian nama dan email
+    //*** Langkah 4: Terapkan pencarian jika ada ***
     if (search && search.trim() !== '') {
       const keyword = search.trim();
       query = query.or(
@@ -700,7 +700,7 @@ export class AdminService {
       );
     }
 
-    // Langkah 5: Filter peran & stasiun
+    //*** Langkah 5: Terapkan filter jika ada ***
     if (filterPeran) {
       query = query.eq('Peran', filterPeran);
     }
@@ -709,7 +709,7 @@ export class AdminService {
       query = query.eq('ID_Stasiun', filterStasiunId);
     }
 
-    // Langkah 6: Eksekusi query
+    // *** Langkah 6: Eksekusi query ***
     const { data, error } = await query;
 
     if (error) {
@@ -717,7 +717,7 @@ export class AdminService {
       throw new BadRequestException('Gagal mengambil data admin');
     }
 
-    // Langkah 7: Filter manual untuk Nama Stasiun
+    //*** Langkah 7: Lakukan filter tambahan pada hasil jika diperlukan ***
     let filteredData = data || [];
     if (search && search.trim() !== '') {
       const lowerSearch = search.toLowerCase();
@@ -732,7 +732,7 @@ export class AdminService {
       );
     }
 
-    // Langkah 8: Return hasil
+    //*** Langkah 8: Kembalikan response ***
     return {
       message: 'Data admin berhasil diambil',
       count: filteredData.length,

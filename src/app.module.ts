@@ -1,5 +1,4 @@
 import { AdminModule } from '@/admin/admin.module';
-import { LokasiModule } from '@/lokasi/lokasi.module';
 import { PengunjungModule } from '@/pengunjung/pengunjung.module';
 
 import { AppController } from '@/app.controller';
@@ -15,7 +14,6 @@ import { ConfigModule } from '@nestjs/config';
     }),
     AdminModule,
     PengunjungModule,
-    LokasiModule,
   ],
   controllers: [AppController],
   providers: [AppService, SupabaseService],

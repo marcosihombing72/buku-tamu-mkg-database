@@ -20,12 +20,16 @@ async function bootstrap() {
       max: 100,
     }),
   );
+  app.use((req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    next();
+  });
 
   // jadi /api
   app.setGlobalPrefix('api');
 
   app.enableCors({
-    origin: true,
+    origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });

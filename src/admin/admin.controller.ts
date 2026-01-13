@@ -70,6 +70,66 @@ export class SupabaseAuthGuard implements CanActivate {
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        nama_depan: {
+          type: 'string',
+          example: 'Budi',
+          description: 'Nama depan admin (wajib)',
+        },
+        nama_belakang: {
+          type: 'string',
+          example: 'Santoso',
+          description: 'Nama belakang admin (opsional)',
+        },
+        email: {
+          type: 'string',
+          example: 'admin@example.com',
+          description: 'Email admin (wajib)',
+        },
+        password: {
+          type: 'string',
+          example: 'password123',
+          description: 'Password minimal 6 karakter (wajib)',
+        },
+        confirmPassword: {
+          type: 'string',
+          example: 'password123',
+          description: 'Konfirmasi password harus sama (wajib)',
+        },
+        peran: {
+          type: 'string',
+          enum: ['Admin', 'Superadmin'],
+          example: 'Admin',
+          description: 'Peran pengguna (Admin / Superadmin)',
+        },
+        id_stasiun: {
+          type: 'string',
+          example: 'ST123',
+          description: 'ID Stasiun (wajib jika peran = Admin)',
+        },
+        foto: {
+          type: 'string',
+          format: 'binary',
+          description:
+            'Foto admin opsional (default Logo_BMKG.png jika tidak diunggah)',
+        },
+      },
+      required: ['nama_depan', 'email', 'password', 'confirmPassword', 'peran'],
+    },
+  })
+  @UseInterceptors(FileInterceptor('foto'))
+  @Post('register')
+  async registerAdmin(
+    @Body() body: any,
+    @UploadedFile() foto?: Express.Multer.File,
+  ) {
+    return this.adminService.registerAdmin(body, foto);
+  }
+
   @Post('login')
   async loginAdmin(@Body() dto: LoginAdminDto) {
     return this.adminService.loginAdmin(dto);

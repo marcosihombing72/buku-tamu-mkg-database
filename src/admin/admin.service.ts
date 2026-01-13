@@ -51,6 +51,167 @@ interface BukuTamuWithPengunjung {
 export class AdminService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
+  //*** Fungsi register admin tampa verivikasi ***
+  async registerAdmin(body: any, foto?: Express.Multer.File) {
+    const {
+      nama_depan,
+      nama_belakang,
+      email,
+      password,
+      confirmPassword,
+      id_stasiun,
+      peran,
+    } = body;
+
+    const cleanStasiunId = id_stasiun?.trim() || null;
+
+    if (!nama_depan || !email || !password || !confirmPassword || !peran) {
+      throw new BadRequestException('Field wajib belum lengkap');
+    }
+
+    if (peran === 'Admin' && !cleanStasiunId) {
+      throw new BadRequestException('ID Stasiun wajib diisi untuk Admin');
+    }
+
+    if (password.length < 6) {
+      throw new BadRequestException('Password minimal 6 karakter');
+    }
+
+    if (password !== confirmPassword) {
+      throw new BadRequestException('Konfirmasi password tidak cocok');
+    }
+
+    const supabase = this.supabaseService.getClient();
+    const supabaseAdmin = this.supabaseService.getAdminClient();
+
+    const { data: existingAdmin } = await supabase
+      .from('Admin')
+      .select('Email_Admin')
+      .eq('Email_Admin', email)
+      .maybeSingle();
+
+    if (existingAdmin) {
+      throw new BadRequestException('Email sudah terdaftar');
+    }
+
+    const { data: newUser, error: createUserError } =
+      await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+      });
+
+    if (createUserError) {
+      throw new BadRequestException(
+        'Gagal membuat akun: ' + createUserError.message,
+      );
+    }
+
+    const newUserId = newUser.user.id;
+
+    let fotoUrl: string;
+
+    if (foto) {
+      if (!['image/jpeg', 'image/png'].includes(foto.mimetype)) {
+        throw new BadRequestException('Format foto harus JPG / PNG');
+      }
+
+      if (foto.size > 10 * 1024 * 1024) {
+        throw new BadRequestException('Ukuran foto maksimal 10MB');
+      }
+
+      const fileExt = foto.originalname.split('.').pop();
+      const uniqueId = randomUUID();
+      const fileName = `${newUserId}_${uniqueId}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('foto-admin')
+        .upload(fileName, foto.buffer, {
+          contentType: foto.mimetype,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        throw new BadRequestException('Gagal upload foto');
+      }
+
+      fotoUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/foto-admin/${fileName}`;
+    } else {
+      // Foto default
+      const defaultPath = join(process.cwd(), 'src', 'public', 'Logo_BMKG.png');
+      const buffer = readFileSync(defaultPath);
+      const uniqueId = randomUUID();
+      const fileName = `${newUserId}_${uniqueId}.png`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('foto-admin')
+        .upload(fileName, buffer, {
+          contentType: 'image/png',
+          upsert: true,
+        });
+
+      if (uploadError) {
+        throw new BadRequestException('Gagal upload foto default');
+      }
+
+      fotoUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/foto-admin/${fileName}`;
+    }
+
+    const { error: insertError } = await supabase.from('Admin').insert([
+      {
+        ID_Admin: newUserId,
+        Nama_Depan_Admin: nama_depan,
+        Nama_Belakang_Admin: nama_belakang || null,
+        Email_Admin: email,
+        Peran: peran,
+        ID_Stasiun: cleanStasiunId,
+        Foto_Admin: fotoUrl,
+        Created_At: new Date().toISOString(),
+      },
+    ]);
+
+    if (insertError) {
+      throw new BadRequestException(
+        'Gagal menyimpan data admin: ' + insertError.message,
+      );
+    }
+
+    const { data: adminData, error: adminError } = await supabase
+      .from('Admin')
+      .select(
+        `
+      ID_Admin,
+      Email_Admin,
+      Nama_Depan_Admin,
+      Nama_Belakang_Admin,
+      Peran,
+      Foto_Admin,
+      ID_Stasiun,
+      Stasiun (
+        Nama_Stasiun
+      )
+    `,
+      )
+      .eq('ID_Admin', newUserId)
+      .single();
+
+    if (adminError) {
+      throw new BadRequestException('Gagal mengambil data admin');
+    }
+
+    return {
+      message: 'Registrasi admin berhasil',
+      user_id: adminData.ID_Admin,
+      email: adminData.Email_Admin,
+      nama_depan: adminData.Nama_Depan_Admin,
+      nama_belakang: adminData.Nama_Belakang_Admin,
+      peran: adminData.Peran,
+      foto: adminData.Foto_Admin,
+      stasiun_id: adminData.ID_Stasiun,
+      stasiun_nama: adminData.Stasiun?.[0]?.Nama_Stasiun ?? null,
+    };
+  }
+
   //*** Fungsi login admin ***
   async loginAdmin(dto: LoginAdminDto) {
     //*** Langkah 1: Dapatkan client Supabase ***
@@ -1011,17 +1172,19 @@ export class AdminService {
 
   //*** Fungsi untuk menghapus admin (hanya untuk Superadmin) ***
   async deleteAdmin(user: SupabaseUser, user_id: string, id_admin: string) {
-    //*** Langkah 1: Dapatkan client Supabase dan Supabase Admin ***
     const supabase = this.supabaseService.getClient();
     const supabaseAdmin = this.supabaseService.getAdminClient();
 
-    const userId = user.id;
+    if (user.id !== user_id) {
+      throw new UnauthorizedException(
+        'Identitas user tidak konsisten dengan token autentikasi',
+      );
+    }
 
-    //*** Langkah 2: Cek role yang login (harus Superadmin) dan validasi tidak menghapus diri sendiri ***
     const { data: currentAdmin, error: currentError } = await supabase
       .from('Admin')
       .select('Peran')
-      .eq('ID_Admin', user.id)
+      .eq('ID_Admin', user_id)
       .single();
 
     if (currentError || !currentAdmin) {
@@ -1029,7 +1192,7 @@ export class AdminService {
     }
 
     if (currentAdmin.Peran !== 'Superadmin') {
-      throw new UnauthorizedException(
+      throw new ForbiddenException(
         'Hanya Superadmin yang dapat menghapus admin',
       );
     }
@@ -1038,7 +1201,6 @@ export class AdminService {
       throw new BadRequestException('Tidak dapat menghapus akun sendiri');
     }
 
-    //*** Langkah 3: Ambil data admin yang akan dihapus (untuk cek foto) ***
     const { data: adminToDelete, error: adminError } = await supabase
       .from('Admin')
       .select('Foto_Admin')
@@ -1049,33 +1211,25 @@ export class AdminService {
       throw new NotFoundException('Admin yang akan dihapus tidak ditemukan');
     }
 
-    //*** Langkah 4: Hapus foto lama jika ada ***
     if (adminToDelete.Foto_Admin) {
-      await this.deleteOldPhoto(adminToDelete.Foto_Admin);
+      try {
+        await this.deleteOldPhoto(adminToDelete.Foto_Admin);
+      } catch {
+        throw new BadRequestException('Gagal menghapus foto admin');
+      }
     }
 
-    //*** Langkah 5: Hapus user dari Supabase Auth melalui Supabase Admin ***
     const { error: deleteUserError } =
       await supabaseAdmin.auth.admin.deleteUser(id_admin);
+
     if (deleteUserError) {
       throw new BadRequestException(
-        'Gagal menghapus user: ' + deleteUserError.message,
+        'Gagal menghapus user auth: ' + deleteUserError.message,
       );
     }
 
-    //*** Langkah 6: Hapus data admin dari tabel Admin ***
-    const { error: deleteAdminError } = await supabase
-      .from('Admin')
-      .delete()
-      .eq('ID_Admin', id_admin);
-
-    if (deleteAdminError) {
-      throw new BadRequestException(
-        'Gagal menghapus data admin: ' + deleteAdminError.message,
-      );
-    }
-
-    //*** Langkah 7: Return hasil ***
-    return { message: 'Admin berhasil dihapus' };
+    return {
+      message: 'Admin berhasil dihapus',
+    };
   }
 }

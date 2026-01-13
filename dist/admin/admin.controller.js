@@ -52,6 +52,9 @@ let AdminController = class AdminController {
     constructor(adminService) {
         this.adminService = adminService;
     }
+    async registerAdmin(body, foto) {
+        return this.adminService.registerAdmin(body, foto);
+    }
     async loginAdmin(dto) {
         return this.adminService.loginAdmin(dto);
     }
@@ -106,6 +109,65 @@ let AdminController = class AdminController {
     }
 };
 exports.AdminController = AdminController;
+__decorate([
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, swagger_1.ApiBody)({
+        schema: {
+            type: 'object',
+            properties: {
+                nama_depan: {
+                    type: 'string',
+                    example: 'Budi',
+                    description: 'Nama depan admin (wajib)',
+                },
+                nama_belakang: {
+                    type: 'string',
+                    example: 'Santoso',
+                    description: 'Nama belakang admin (opsional)',
+                },
+                email: {
+                    type: 'string',
+                    example: 'admin@example.com',
+                    description: 'Email admin (wajib)',
+                },
+                password: {
+                    type: 'string',
+                    example: 'password123',
+                    description: 'Password minimal 6 karakter (wajib)',
+                },
+                confirmPassword: {
+                    type: 'string',
+                    example: 'password123',
+                    description: 'Konfirmasi password harus sama (wajib)',
+                },
+                peran: {
+                    type: 'string',
+                    enum: ['Admin', 'Superadmin'],
+                    example: 'Admin',
+                    description: 'Peran pengguna (Admin / Superadmin)',
+                },
+                id_stasiun: {
+                    type: 'string',
+                    example: 'ST123',
+                    description: 'ID Stasiun (wajib jika peran = Admin)',
+                },
+                foto: {
+                    type: 'string',
+                    format: 'binary',
+                    description: 'Foto admin opsional (default Logo_BMKG.png jika tidak diunggah)',
+                },
+            },
+            required: ['nama_depan', 'email', 'password', 'confirmPassword', 'peran'],
+        },
+    }),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('foto')),
+    (0, common_1.Post)('register'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "registerAdmin", null);
 __decorate([
     (0, common_1.Post)('login'),
     __param(0, (0, common_1.Body)()),

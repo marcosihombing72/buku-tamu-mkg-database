@@ -7,6 +7,17 @@ import { SupabaseUser } from '@/interfaces/supabase-user.interface';
 export declare class AdminService {
     private readonly supabaseService;
     constructor(supabaseService: SupabaseService);
+    registerAdmin(body: any, foto?: Express.Multer.File): Promise<{
+        message: string;
+        user_id: any;
+        email: any;
+        nama_depan: any;
+        nama_belakang: any;
+        peran: any;
+        foto: any;
+        stasiun_id: any;
+        stasiun_nama: any;
+    }>;
     loginAdmin(dto: LoginAdminDto): Promise<{
         message: string;
         access_token: string;

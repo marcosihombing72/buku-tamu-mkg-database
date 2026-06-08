@@ -100,7 +100,7 @@ let PengunjungService = class PengunjungService {
         const waktuKunjungan = (0, dayjs_1.default)()
             .tz('Asia/Jakarta')
             .format('YYYY-MM-DD HH:mm:ss');
-        const idPengunjung = (0, crypto_1.randomUUID)();
+        let idPengunjung = (0, crypto_1.randomUUID)();
         const pengunjungPayload = {
             ID_Pengunjung: idPengunjung,
             Nama_Depan_Pengunjung: dto.Nama_Depan_Pengunjung,
@@ -121,7 +121,7 @@ let PengunjungService = class PengunjungService {
                 throw new common_1.BadRequestException(`Gagal memeriksa data pengunjung: ${checkError.message}`);
             }
             if (existing) {
-                pengunjungPayload.ID_Pengunjung = existing.ID_Pengunjung;
+                idPengunjung = existing.ID_Pengunjung;
             }
             else {
                 const { error: insertPengunjungError } = await supabase

@@ -132,7 +132,7 @@ export class PengunjungService {
       .format('YYYY-MM-DD HH:mm:ss');
 
     // Buat entri Pengunjung
-    const idPengunjung = randomUUID();
+    let idPengunjung = randomUUID();
 
     const pengunjungPayload = {
       ID_Pengunjung: idPengunjung,
@@ -159,27 +159,25 @@ export class PengunjungService {
       }
 
       if (existing) {
-        // Jika email sudah ada, gunakan ID_Pengunjung lama
-        pengunjungPayload.ID_Pengunjung = existing.ID_Pengunjung;
+        // gunakan ID lama
+        idPengunjung = existing.ID_Pengunjung;
       } else {
-        // Jika belum ada, baru insert data baru
         const { error: insertPengunjungError } = await supabase
           .from('Pengunjung')
           .insert(pengunjungPayload);
 
         if (insertPengunjungError) {
-          // jika gagal, hapus file tanda tangan yang sudah diupload
           await supabase.storage
             .from('tanda-tangan')
             .remove([fileName])
             .catch(() => {});
+
           throw new BadRequestException(
             `Gagal simpan data pengunjung: ${insertPengunjungError.message}`,
           );
         }
       }
     } else {
-      // Jika tidak ada email (kosong), langsung insert
       const { error: insertPengunjungError } = await supabase
         .from('Pengunjung')
         .insert(pengunjungPayload);
@@ -189,6 +187,7 @@ export class PengunjungService {
           .from('tanda-tangan')
           .remove([fileName])
           .catch(() => {});
+
         throw new BadRequestException(
           `Gagal simpan data pengunjung: ${insertPengunjungError.message}`,
         );

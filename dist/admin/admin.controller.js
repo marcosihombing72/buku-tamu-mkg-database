@@ -85,6 +85,10 @@ let AdminController = class AdminController {
         const user = req.user;
         return this.adminService.getBukuTamuBulanIni(user, user_id);
     }
+    async deleteBukuTamu(id, req, user_id) {
+        const user = req.user;
+        return this.adminService.deleteBukuTamu(user, user_id, id);
+    }
     async getAllAdmins(req, user_id, search, filterPeran, filterStasiunId) {
         const user = req.user;
         return this.adminService.getAllAdmins(user, user_id, search, filterPeran, filterStasiunId);
@@ -295,6 +299,26 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getBukuTamuBulanIni", null);
+__decorate([
+    (0, swagger_1.ApiBearerAuth)('access-token'),
+    (0, common_1.UseGuards)(SupabaseAuthGuard),
+    (0, common_1.Delete)('buku-tamu/:id'),
+    (0, swagger_1.ApiParam)({
+        name: 'id',
+        description: 'ID Buku Tamu',
+    }),
+    (0, swagger_1.ApiHeader)({
+        name: 'user_id',
+        description: 'ID user',
+        required: true,
+    }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __param(2, (0, common_1.Headers)('user_id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "deleteBukuTamu", null);
 __decorate([
     (0, swagger_1.ApiBearerAuth)('access-token'),
     (0, common_1.UseGuards)(SupabaseAuthGuard),

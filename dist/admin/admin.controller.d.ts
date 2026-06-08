@@ -93,6 +93,12 @@ export declare class AdminController {
     getBukuTamuBulanIni(req: {
         user: SupabaseUser;
     }, user_id: string): Promise<any>;
+    deleteBukuTamu(id: string, req: {
+        user: SupabaseUser;
+    }, user_id: string): Promise<{
+        message: string;
+        id_buku_tamu: string;
+    }>;
     getAllAdmins(req: {
         user: SupabaseUser;
     }, user_id: string, search?: string, filterPeran?: string, filterStasiunId?: string): Promise<{

@@ -26,6 +26,7 @@ import {
   ApiHeader,
   ApiQuery,
   ApiTags,
+  ApiParam,
 } from '@nestjs/swagger';
 
 import { AdminService } from '@/admin/admin.service';
@@ -264,6 +265,28 @@ export class AdminController {
   ) {
     const user = req.user;
     return this.adminService.getBukuTamuBulanIni(user, user_id);
+  }
+
+  @ApiBearerAuth('access-token')
+  @UseGuards(SupabaseAuthGuard)
+  @Delete('buku-tamu/:id')
+  @ApiParam({
+    name: 'id',
+    description: 'ID Buku Tamu',
+  })
+  @ApiHeader({
+    name: 'user_id',
+    description: 'ID user',
+    required: true,
+  })
+  async deleteBukuTamu(
+    @Param('id') id: string,
+    @Request() req: { user: SupabaseUser },
+    @Headers('user_id') user_id: string,
+  ) {
+    const user = req.user;
+
+    return this.adminService.deleteBukuTamu(user, user_id, id);
   }
 
   @ApiBearerAuth('access-token')

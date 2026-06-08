@@ -810,6 +810,112 @@ export class AdminService {
     return this.getBukuTamuByPeriod(user, user_id, 'month');
   }
 
+  async deleteBukuTamu(
+    user: SupabaseUser,
+    user_id: string,
+    idBukuTamu: string,
+  ) {
+    const supabase = this.supabaseService.getClient();
+
+    const userId = user.id;
+
+    // ================= ADMIN =================
+
+    const { data: adminData, error: adminError } = await supabase
+      .from('Admin')
+      .select('Peran, ID_Stasiun')
+      .eq('ID_Admin', userId)
+      .single();
+
+    if (adminError || !adminData) {
+      throw new BadRequestException('Data admin tidak ditemukan');
+    }
+
+    const isSuperadmin = adminData.Peran === 'Superadmin';
+
+    // ================= AMBIL DATA BUKU TAMU =================
+
+    const { data: bukuTamu, error: bukuError } = await supabase
+      .from('Buku_Tamu')
+      .select('*')
+      .eq('ID_Buku_Tamu', idBukuTamu)
+      .single();
+
+    if (bukuError || !bukuTamu) {
+      throw new NotFoundException('Data buku tamu tidak ditemukan');
+    }
+
+    // ================= VALIDASI STASIUN =================
+
+    if (!isSuperadmin) {
+      if (!adminData.ID_Stasiun) {
+        throw new ForbiddenException(
+          'Admin tidak memiliki stasiun yang terdaftar',
+        );
+      }
+
+      if (!bukuTamu.ID_Stasiun) {
+        throw new ForbiddenException('Data buku tamu tidak memiliki stasiun');
+      }
+
+      if (String(adminData.ID_Stasiun) !== String(bukuTamu.ID_Stasiun)) {
+        throw new ForbiddenException(
+          `Admin stasiun ${adminData.ID_Stasiun} tidak dapat menghapus data dari stasiun ${bukuTamu.ID_Stasiun}`,
+        );
+      }
+    }
+
+    // ================= HAPUS FILE TANDA TANGAN =================
+
+    if (bukuTamu.Tanda_Tangan) {
+      try {
+        const url = new URL(bukuTamu.Tanda_Tangan);
+
+        const fileName = decodeURIComponent(
+          url.pathname.split('/').pop() ?? '',
+        );
+
+        if (fileName) {
+          await supabase.storage.from('tanda-tangan').remove([fileName]);
+        }
+      } catch (error) {
+        // lanjutkan proses walaupun gagal hapus file
+      }
+    }
+
+    // ================= HAPUS BUKU TAMU =================
+
+    const { error: deleteError } = await supabase
+      .from('Buku_Tamu')
+      .delete()
+      .eq('ID_Buku_Tamu', idBukuTamu);
+
+    if (deleteError) {
+      throw new BadRequestException(
+        `Gagal menghapus buku tamu: ${deleteError.message}`,
+      );
+    }
+
+    // ================= OPSIONAL: HAPUS PENGUNJUNG JIKA TIDAK DIGUNAKAN =================
+
+    const { data: remaining } = await supabase
+      .from('Buku_Tamu')
+      .select('ID_Buku_Tamu')
+      .eq('ID_Pengunjung', bukuTamu.ID_Pengunjung);
+
+    if (!remaining || remaining.length === 0) {
+      await supabase
+        .from('Pengunjung')
+        .delete()
+        .eq('ID_Pengunjung', bukuTamu.ID_Pengunjung);
+    }
+
+    return {
+      message: 'Data buku tamu berhasil dihapus',
+      id_buku_tamu: idBukuTamu,
+    };
+  }
+
   //*** Fungsi untuk mendapatkan semua data admin dengan fitur search dan filter (hanya untuk Superadmin) ***
   async getAllAdmins(
     user: SupabaseUser,

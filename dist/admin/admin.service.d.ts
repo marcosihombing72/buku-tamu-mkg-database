@@ -77,6 +77,10 @@ export declare class AdminService {
     getBukuTamuHariIni(user: SupabaseUser, user_id: string): Promise<any>;
     getBukuTamuMingguIni(user: SupabaseUser, user_id: string): Promise<any>;
     getBukuTamuBulanIni(user: SupabaseUser, user_id: string): Promise<any>;
+    deleteBukuTamu(user: SupabaseUser, user_id: string, idBukuTamu: string): Promise<{
+        message: string;
+        id_buku_tamu: string;
+    }>;
     getAllAdmins(user: SupabaseUser, user_id: string, search?: string, filterPeran?: string, filterStasiunId?: string): Promise<{
         message: string;
         count: number;

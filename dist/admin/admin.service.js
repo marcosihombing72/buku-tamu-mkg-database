@@ -596,11 +596,8 @@ let AdminService = class AdminService {
             if (!adminData.ID_Stasiun) {
                 throw new common_1.ForbiddenException('Admin tidak memiliki stasiun yang terdaftar');
             }
-            if (!bukuTamu.ID_Stasiun) {
-                throw new common_1.ForbiddenException('Data buku tamu tidak memiliki stasiun');
-            }
             if (String(adminData.ID_Stasiun) !== String(bukuTamu.ID_Stasiun)) {
-                throw new common_1.ForbiddenException(`Admin stasiun ${adminData.ID_Stasiun} tidak dapat menghapus data dari stasiun ${bukuTamu.ID_Stasiun}`);
+                throw new common_1.ForbiddenException('Anda tidak memiliki akses untuk menghapus data buku tamu ini');
             }
         }
         if (bukuTamu.Tanda_Tangan) {
